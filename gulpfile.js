@@ -6,39 +6,35 @@ const _ = require('lodash');
 const P = require('bluebird');
 const path = require('path');
 const gulp = require('gulp');
-const babel = require('babel-core')
+const babel = require('gulp-babel')
 const watch = require('gulp-watch');
 const concat = require('gulp-concat');
-const hangforever = new P((resolve, reject) => {});
+const hangforever = new P((resolve, reject) => null);
 
 ///////////////////////////////////////////////////////////////////////////
 
 const PROJECT_ROOT = __dirname;
 const PROJECT = path.basename(PROJECT_ROOT);
 const SRC = path.join(PROJECT_ROOT, 'src');
-const DIST = path.join(PROJECT_ROOT, 'dist');
 const BUILD = path.join(PROJECT_ROOT, 'build');
 
 ///////////////////////////////////////////////////////////////////////////
 
 const tasks = {};
 
-tasks.babelify = () => {
 
+tasks.transpile = () => {
   return new P((resolve, reject) => {
-    gulp.src('src/**/*.js')
+    gulp.src(['src/**/*.js'])
       .pipe(babel({presets: ['es2015']}))
-      .pipe(concat('build.js'))
-      .pipe(sourcemaps.write('.'))
-      .pipe(gulp.dest('dist'))
+      .pipe(concat('bundle.js'))
+      .pipe(gulp.dest('build'))
       .on('end', resolve)
   });
 };
 
-tasks.watch = () => {
-  console.log(watch);
-  console.log('executing watch');
 
+tasks.watch = () => {
   if (!this.watching) {
     this.watching = hangforever;
 
@@ -53,11 +49,10 @@ tasks.watch = () => {
       watch(globs, (vinyl) => {
         clearTimeout(debounce);
         debounce = setTimeout(task, 100);
-        console.log(debounce);
       });
     };
 
-    register([SRC + '/**/*.js'], tasks.babelify);
+    register([SRC + '/**/*.js'], tasks.transpile);
   }
 
   return this.watching;
@@ -65,6 +60,7 @@ tasks.watch = () => {
 
 ///////////////////////////////////////////////////////////////////////////
 
-gulp.task('babelify', tasks.babelify);
-gulp.task('default', ['babelify'], tasks.watch);
+gulp.task('transpile', tasks.transpile);
+gulp.task('watch', tasks.watch);
+gulp.task('default', ['transpile'], tasks.watch);
 

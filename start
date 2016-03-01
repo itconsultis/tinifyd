@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+PROJECT=$(basename $(pwd -P))
+APP_CONTAINER=${PROJECT}_drupal
+PHP_CONTAINER=${PROJECT}_php
+DB_CONTAINER=${PROJECT}_db
+STORAGE_CONTAINER=${PROJECT}_appdata
+
+if [ ! -f .env ]; then
+    cp .env.example .env
+    echo "Created boilerplate .env file in project root."
+
+    private_ip=$(ifconfig | egrep 'addr:10\.')
+
+    # We are checking if there is a private network interface so we can guess 
+    # whether or not we are on a local dev environment. 
+    if [[ $private_ip ]]; then
+        echo "********************************************************************"
+        echo "*** IMPORTANT: You appear to be in a non-development environment ***"
+        echo "*** You need to modify the .env file NOW, in a SEPARATE TERMINAL ***"
+        echo "********************************************************************"
+        echo ""
+        read -p "Press [Enter] AFTER making your changes."
+    fi
+fi
+
+
+source .env
+
+
+
+# wait for mysql server to start accepting queries
+wait_for_mysql () {
+    echo "Waiting for MySQL server to enter a state of readiness..."
+    while [ 0 ];
+    do
+        sleep 1
+        docker exec -ti $DB_CONTAINER bash -c "mysql -u root -proot --execute='SELECT 1'" > /dev/null 2>&1
+        exit_code=$?
+
+        if [[ $exit_code -eq 0 ]]; then
+            break
+        fi
+    done
+}
+
+
+cleanup () {
+    docker exec $APP_CONTAINER drush cc drush
+}
+
+
+startup () {
+    docker-compose up -d
+    echo "If you want to recreate containers with latest modifications, you can do [-r] instead."
+    cleanup
+}
+
+
+recreate () {
+    docker-compose up -d --force-recreate	
+    cleanup
+}
+
+
+create () {
+    startup
+    wait_for_mysql
+}
+
+
+usage () {
+    echo "usage: start [[-s] | [-c] | [-r] | [-h]]"
+    echo "  -s | --start    Starts the docker containers only"
+    echo "  -c | --create   Starts the docker containers and imports the database and sets up the project"
+    echo "  -r | --recreate Starts the docker containers or recreate them. Attention: Changes inside an existing container might be lost."
+    echo "  -h | --help     Displays this help message"
+}
+
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -s | --start )          startup
+                                exit
+                                ;;
+        -c | --create )         create
+                                exit
+                                ;;
+        -r | --recreate  )      recreate
+                                exit
+                                ;;
+        -h | --help )           usage
+                                exit
+                                ;;
+        * )                     usage
+                                exit 1
+    esac
+    shift
+done
+
+
+usage
+
+
