@@ -1,7 +1,11 @@
-import boot from './bootstrap';
+"use strict";
+
+const boot = require('./bootstrap');
 
 boot().then((app) => {
-  app.get('debug') && console.log(app.get('config'));
+  let config = app.get('config');
+
+  config.debug && console.log(config);
   console.log('tinifyd is running');
 })
 

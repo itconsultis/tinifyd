@@ -3,7 +3,7 @@ node:
   container_name: ${PROJECT}_node
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
-  env_file: .env
+  env_file: ./src/.env
   links:
     - db
   volumes_from:
@@ -17,7 +17,7 @@ db:
   environment:
     MYSQL_DATABASE: ${TINIFYD_DB_NAME}
     MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-  env_file: .env
+  env_file: ./src/.env
   volumes_from:
     - storage
 

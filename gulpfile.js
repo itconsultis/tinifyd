@@ -44,12 +44,28 @@ const watch = (globs, task) => {
   });
 };
 
+/**
+ * Task decorator function that logs task execution time
+ * @param {String} name    name of the task
+ * @param {Function} fn    the task
+ * @return {Function}
+ */
+const task = (name, fn) => {
+  return () => {
+    let start = Date.now();
+
+    return fn().then(() => {
+      console.log('%s task finished in %sms', name, Date.now() - start);
+    })
+  };
+};
+
 ///////////////////////////////////////////////////////////////////////////
 
 const tasks = {};
 
 
-tasks.transpile = () => {
+tasks.transpile = task('transpile', () => {
   return new P((resolve, reject) => {
     gulp.src(['src/**/*.js'])
       .pipe(babel({presets: ['es2015']}))
@@ -57,17 +73,17 @@ tasks.transpile = () => {
       .pipe(gulp.dest('build'))
       .on('end', resolve)
   });
-};
+});
 
 
-tasks.watch = () => {
+tasks.watch = task('watch', () => {
   if (!this.watching) {
     this.watching = hangforever;
     watch([SRC + '/**/*.js'], tasks.transpile);
   }
 
   return this.watching;
-};
+});
 
 ///////////////////////////////////////////////////////////////////////////
 

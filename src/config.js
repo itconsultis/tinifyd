@@ -1,7 +1,8 @@
-import _ from 'lodash';
-import path from 'path';
-import dotenv from 'dotenv';
-import process from 'process';
+const _ = require('lodash');
+const path = require('path');
+const dotenv = require('dotenv');
+
+///////////////////////////////////////////////////////////////////////////
 
 const PROJECT_ROOT = path.dirname(__filename);
 const ENV = process.env;
@@ -21,12 +22,12 @@ const get = (key, fallback) => {
   return ENV[key];
 };
 
+///////////////////////////////////////////////////////////////////////////
 
 // parse .env file and merge into process.env
 dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')});
 
-
-export default {
+module.exports = {
   debug: Boolean(get('TINIFYD_DEBUG', false)),
   paths: {
     source: get('TINIFYD_SOURCE_PATH'),

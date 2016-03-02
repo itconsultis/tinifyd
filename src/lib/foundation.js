@@ -1,8 +1,9 @@
-import _ from 'lodash';
-import P from 'bluebird';
-import EventEmitter from 'events';
-import is from 'is';
+"use strict";
 
+const _ = require('lodash');
+const P = require('bluebird');
+const EventEmitter = require('events');
+const is = require('is');
 
 /**
  * Container is component that:
@@ -10,7 +11,7 @@ import is from 'is';
  * - has a synchronous get() method that retrieves a value by key
  * @constructor
  */
-export class Container {
+const Container = exports.Container = class Container {
 
   constructor () {
     this.bindings = new Map();
@@ -23,8 +24,14 @@ export class Container {
    * @return {Promise}                
    */
   set (key, resolver) {
-    let bindings = this.bindings
-    let bind = (value) => {bindings.set(key, value)}
+    let bindings = this.bindings;
+    let bind = (value) => {bindings.set(key, value)};
+
+    if (typeof resolver !== 'function') {
+      bind(resolver);
+      return P.resolve();
+    }
+
     let value = resolver();
 
     if (typeof value.then === 'function') {

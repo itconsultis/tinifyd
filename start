@@ -2,9 +2,9 @@
 
 set -aeu -o pipefail
 
-if [ ! -f .env ]; then
-    cp .env.example .env
-    echo "Created boilerplate .env file in project root.\n"
+if [ ! -f ./src/.env ]; then
+    cp ./src/.env.example ./src/.env
+    echo "Created boilerplate .env file in src directory.\n"
     echo "********************************************************"
     echo "*** IMPORTANT: You need to modify the .env file NOW. ***"
     echo "*** Make your modifications, then re-run this script.   "
@@ -12,7 +12,7 @@ if [ ! -f .env ]; then
     exit 0    
 fi
 
-source .env
+source ./src/.env
 
 NODE_CONTAINER=${PROJECT}_node
 DB_CONTAINER=${PROJECT}_db
