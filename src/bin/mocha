@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname $(readlink -f "${BASH_SOURCE[0]}"))
+SRC=$(readlink -f "$SCRIPT_DIR/..");
+
+$SRC/node_modules/mocha/bin/mocha \
+    --harmony \
+    --require="$SRC/tests/bootstrap.js" \
+    --recursive \
+    $SRC/tests
+

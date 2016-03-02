@@ -2,8 +2,8 @@
 
 const boot = require('./bootstrap');
 
-boot().then((app) => {
-  let config = app.get('config');
+boot().then((container) => {
+  let config = container.get('config');
 
   config.debug && console.log(config);
   console.log('tinifyd is running');

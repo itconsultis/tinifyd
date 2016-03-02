@@ -3,27 +3,31 @@
 const _ = require('lodash');
 const P = require('bluebird');
 const config = require('./config');
-const Container = require('./lib/container');
+const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
 const mysql = require('mysql');
+const plugins = require('./lib/plugins');
+const Daemon = require('./lib/daemon').Daemon;
 
 module.exports = () => {
 
-  let app = new Container();
+  let container = new Container();
 
-  return app.set('config', config)
+  return container.set('config', config)
 
   .then(() => {
     console.log('initializing tinify client');
     tinify.key = config.tinify.key;
-    return app.set('tinify', tinify);
+    return container.set('tinify', tinify);
   })
 
   .then(() => {
     console.log('initializing mysql connection');
 
-    return app.set('db', () => {
+    return container.set('db', () => {
       let db = mysql.createConnection(config.mysql);
+
+      process.once('SIGTERM', () => {db.end()});
 
       return new P((resolve, reject) => {
         db.connect((err) => {
@@ -34,10 +38,18 @@ module.exports = () => {
   })
 
   .then(() => {
-    process.once('SIGTERM', () => {
-      app.get('db').end();
-    })
+    console.log('initializing daemon');
+
+    return container.set('daemon', () => {
+      return new Daemon({
+        container: container,
+        plugins: _.map(plugins, (plugin_class) => {
+          return new plugin_class(container);
+        }),
+      });
+    });
   })
 
-  .then(() => app);
+  // always resolve the container itself at the very end
+  .then(() => container);
 };
