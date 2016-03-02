@@ -3,7 +3,7 @@
 const _ = require('lodash');
 const P = require('bluebird');
 const config = require('./config');
-const Container = require('./lib/foundation').Container;
+const Container = require('./lib/container');
 const tinify = require('tinify');
 const mysql = require('mysql');
 

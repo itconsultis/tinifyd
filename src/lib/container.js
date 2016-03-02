@@ -11,7 +11,7 @@ const is = require('is');
  * - has a synchronous get() method that retrieves a value by key
  * @constructor
  */
-const Container = exports.Container = class Container {
+const Container = module.exports = class Container {
 
   constructor () {
     this.bindings = new Map();
