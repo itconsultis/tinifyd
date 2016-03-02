@@ -14,9 +14,11 @@
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.3.3",
+    "db-migrate": "^0.10.0-beta.11",
     "dotenv": "^2.0.0",
     "is": "^3.1.0",
     "lodash": "^4.5.1",
+    "pm2": "^1.0.1",
     "tinify": "^1.2.0"
   },
   "devDependencies": {

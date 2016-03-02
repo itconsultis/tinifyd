@@ -1,5 +1,7 @@
 import boot from './bootstrap';
-import config from './config';
 
-
+boot().then((app) => {
+  app.get('debug') && console.log(app.get('config'));
+  console.log('tinifyd is running');
+})
 

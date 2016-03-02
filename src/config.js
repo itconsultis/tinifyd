@@ -33,8 +33,8 @@ export default {
     temp: get('TINIFYD_TEMP_PATH', '/tmp/tinifyd'),
   },
   tinify: {
-    host: get('TINIFYD_TINIFY_HOST', 'api.tinify.com'),
-    key: get('TINIFYD_TINIFY_KEY', '_secure_'),
+    host: get('TINIFYD_API_HOST', 'api.tinify.com'),
+    key: get('TINIFYD_API_KEY', '_secure_'),
   },
   db: {
     driver: get('TINIFYD_DB_DRIVER', 'mysql'),

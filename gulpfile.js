@@ -7,7 +7,7 @@ const P = require('bluebird');
 const path = require('path');
 const gulp = require('gulp');
 const babel = require('gulp-babel')
-const watch = require('gulp-watch');
+const fswatch = require('gulp-watch');
 const concat = require('gulp-concat');
 const hangforever = new P((resolve, reject) => null);
 
@@ -17,6 +17,32 @@ const PROJECT_ROOT = __dirname;
 const PROJECT = path.basename(PROJECT_ROOT);
 const SRC = path.join(PROJECT_ROOT, 'src');
 const BUILD = path.join(PROJECT_ROOT, 'build');
+
+///////////////////////////////////////////////////////////////////////////
+
+/**
+ * Register a filesystem watcher
+ * @param {Array} globs
+ * @param {Function} task
+ * @return void
+ */
+const watch = (globs, task) => {
+  let debounce = null;
+
+  let wrapper = () => {
+    try {
+      task();
+    }
+    catch (e) {
+      console.log(e);
+    }
+  };
+
+  fswatch(globs, (vinyl) => {
+    clearTimeout(debounce);
+    debounce = setTimeout(wrapper, 100);
+  });
+};
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -37,22 +63,7 @@ tasks.transpile = () => {
 tasks.watch = () => {
   if (!this.watching) {
     this.watching = hangforever;
-
-    /**
-     * Register a filesystem watcher
-     * @param {Array} globs
-     * @param {Function} task
-     */
-    let register = (globs, task) => {
-      let debounce = null;
-
-      watch(globs, (vinyl) => {
-        clearTimeout(debounce);
-        debounce = setTimeout(task, 100);
-      });
-    };
-
-    register([SRC + '/**/*.js'], tasks.transpile);
+    watch([SRC + '/**/*.js'], tasks.transpile);
   }
 
   return this.watching;

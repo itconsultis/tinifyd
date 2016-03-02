@@ -1,0 +1,28 @@
+node:
+  image: node:5.7-wheezy
+  container_name: ${PROJECT}_node
+  working_dir: /opt/tinifyd
+  env_file: .env
+  links:
+    - db
+  volumes_from:
+    - storage
+
+db:
+  image: percona:5.7
+  container_name: ${PROJECT}_db
+  env_file: .env
+  volumes_from:
+    - storage
+
+storage:
+  image: busybox:latest
+  container_name: ${PROJECT}_storage
+  volumes:
+    - ./bin:/opt/tinifyd/bin
+    - ./src:/opt/tinifyd/src
+    - /opt/tinifyd/build
+    - ./logs/mysql:/var/log/mysql
+    - ./data/mysql:/var/lib/mysql
+    - ./env/db/etc/mysql:/etc/mysql
+

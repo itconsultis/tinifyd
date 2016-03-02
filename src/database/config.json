@@ -1,0 +1,10 @@
+{
+  "default": {
+    "driver": "mysql",
+    "host": {"ENV": "DB_HOST"},
+    "port": {"ENV": "DB_PORT"},
+    "name": "tinifyd",
+    "user": {"ENV": "DB_USER"},
+    "password": {"ENV": "DB_PASS"}
+  }
+}
