@@ -37,11 +37,10 @@ module.exports = {
     host: get('TINIFYD_API_HOST', 'api.tinify.com'),
     key: get('TINIFYD_API_KEY', '_secure_'),
   },
-  db: {
-    driver: get('TINIFYD_DB_DRIVER', 'mysql'),
+  mysql: {
     host: get('TINIFYD_DB_HOST', 'localhost'),
     port: get('TINIFYD_DB_PORT', '3306'),
-    name: get('TINIFYD_DB_NAME', 'domain'),
+    database: get('TINIFYD_DB_NAME', 'domain'),
     user: get('TINIFYD_DB_USER', 'root'),
     password: get('TINIFYD_DB_PASS', 'root'),
   },

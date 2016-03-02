@@ -15,8 +15,8 @@ db:
   expose:
     - "3306"
   environment:
+    MYSQL_ROOT_PASSWORD: ${TINIFYD_DB_PASS}
     MYSQL_DATABASE: ${TINIFYD_DB_NAME}
-    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
   env_file: ./src/.env
   volumes_from:
     - storage

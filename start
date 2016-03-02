@@ -23,9 +23,9 @@ wait_for_mysql () {
     echo "Waiting for MySQL server to start accepting queries..."
     while [ 0 ];
     do
-        cmd="mysql -u root -e 'SELECT \"READY\"'"
+        cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"'"
         result=$(docker exec -ti tinifyd_db bash -c "$cmd" || true)
-        sleep 1
+        sleep 2
 
         if [[ "$result" =~ "READY" ]]; then
             break
@@ -42,7 +42,7 @@ install_npm_dependencies () {
 
 run_migrations () {
     echo "Running migrations..."
-    docker exec $NODE_CONTAINER bash -c "cd src && bin/migrate"
+    docker exec $NODE_CONTAINER bash -c "cd src && bin/migrate up"
 }
 
 

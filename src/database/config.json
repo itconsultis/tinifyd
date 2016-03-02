@@ -1,10 +1,11 @@
 {
   "default": {
     "driver": "mysql",
-    "host": {"ENV": "DB_HOST"},
-    "port": {"ENV": "DB_PORT"},
-    "name": "tinifyd",
-    "user": {"ENV": "DB_USER"},
-    "password": {"ENV": "DB_PASS"}
+    "host": {"ENV": "TINIFYD_DB_HOST"},
+    "port": {"ENV": "TINIFYD_DB_PORT"},
+    "database": {"ENV": "TINIFYD_DB_NAME"},
+    "user": {"ENV": "TINIFYD_DB_USER"},
+    "password": {"ENV": "TINIFYD_DB_PASS"},
+    "multipleStatements": true
   }
 }
