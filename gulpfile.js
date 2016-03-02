@@ -38,7 +38,7 @@ const watch = (globs, task) => {
     }
   };
 
-  fswatch(globs, (vinyl) => {
+  fswatch(globs, {usePolling: true}, (vinyl) => {
     clearTimeout(debounce);
     debounce = setTimeout(wrapper, 100);
   });

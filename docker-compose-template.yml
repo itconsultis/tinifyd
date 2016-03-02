@@ -1,6 +1,7 @@
 node:
   image: node:5.7-wheezy
   container_name: ${PROJECT}_node
+  command: tail -f /dev/null
   working_dir: /opt/tinifyd
   env_file: .env
   links:
@@ -9,8 +10,13 @@ node:
     - storage
 
 db:
-  image: percona:5.7
+  image: percona:5.6
   container_name: ${PROJECT}_db
+  expose:
+    - "3306"
+  environment:
+    MYSQL_DATABASE: ${TINIFYD_DB_NAME}
+    MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
   env_file: .env
   volumes_from:
     - storage
@@ -19,10 +25,10 @@ storage:
   image: busybox:latest
   container_name: ${PROJECT}_storage
   volumes:
+    - /opt/tinifyd
     - ./bin:/opt/tinifyd/bin
     - ./src:/opt/tinifyd/src
-    - /opt/tinifyd/build
-    - ./logs/mysql:/var/log/mysql
-    - ./data/mysql:/var/lib/mysql
-    - ./env/db/etc/mysql:/etc/mysql
+    #- ./logs/mysql:/var/log/mysql
+    #- ./data/mysql:/var/lib/mysql
+    #- ./env/db/etc/mysql:/etc/mysql
 
