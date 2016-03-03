@@ -24,31 +24,49 @@ than once.
 
 ## Workflow
 
-### Optimization procedure for a single image
+### Image optimization
+
+#### Single image optimization procedure
 ```
 ensure the image is a JPG or PNG
 compute the current hash sum
-check the blob table for the current hash sum
-ensure the hash sum is not in the blob table
-record a semaphore on the current hash sum
+ensure the hash sum is not in the blob table; escape if it is
+record a lock on the current hash sum; escape if lock operation fails
 optimize the image via tinify
 compute the hash sum of the optimized image
 replace the original with the optimized one
 record the optimized hash sum in the blob table
+release the lock on the old hash sum
 ```
 
 ### Batch optimization procedure
 ```
 iterate over JPG and PNG image blobs found in the source directory
-execute optimization procedure on each image that is found
+execute single image optimization procedure on each image that is found
 ```
 
 ### Filesystem change event handling
 ```
 listen for file change events on the source directory
-execute optimization procedure when a file changes
+execute single image optimization procedure as files change
 ```
 
+### Locks
+
+Locking will be pessimistic.
+
+Periodically something (or someone) will need to remove stale locks.
+Details TBD.
+
+## Concurrency
+
+Each single image optimization procedure is *queue* into one ore more
+asynchronous task buffers. A design goal is to allow the following parameters
+to be configurable:
+
+- the size of each task buffer (i.e., how many concurrent operations a single
+  task buffer is allowed to perform)
+- the number of task buffers ("pipes")
 
 
 ## License
