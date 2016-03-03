@@ -22,6 +22,35 @@ than once.
 - [Docker](http://www.docker.com/) (but only if you want to run the daemon inside a container)
 
 
+## Workflow
+
+### Optimization procedure for a single image
+```
+ensure the image is a JPG or PNG
+compute the current hash sum
+check the blob table for the current hash sum
+ensure the hash sum is not in the blob table
+record a semaphore on the current hash sum
+optimize the image via tinify
+compute the hash sum of the optimized image
+replace the original with the optimized one
+record the optimized hash sum in the blob table
+```
+
+### Batch optimization procedure
+```
+iterate over JPG and PNG image blobs found in the source directory
+execute optimization procedure on each image that is found
+```
+
+### Filesystem change event handling
+```
+listen for file change events on the source directory
+execute optimization procedure when a file changes
+```
+
+
+
 ## License
 
 The MIT License (MIT)
