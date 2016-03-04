@@ -1,7 +1,5 @@
 "use strict";
 
-console.log(typeof Map);
-
 const coerce = lib.lang.coerce;
 
 describe('lang.coerce', () => {
