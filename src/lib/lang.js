@@ -18,7 +18,10 @@ coerce.object = (input) => {
   }
 
   if (input instanceof Map) {
-    return _.assign(output, input.entries());
+    input.forEach((value, key) => {
+      output[key] = value;
+    });
+    return output;
   }
 
   if (is.array(input)) {
@@ -31,7 +34,6 @@ coerce.object = (input) => {
     for (let value of input.values()) {
       output[i++] = value; 
     }
-
     return output;
   }
 

@@ -1,5 +1,7 @@
 "use strict";
 
+console.log(typeof Map);
+
 const coerce = lib.lang.coerce;
 
 describe('lang.coerce', () => {
@@ -27,7 +29,7 @@ describe('lang.coerce', () => {
     });
 
     it('coerces a Map', () => {
-      let output = coerce.object(new Map({foo: 1, bar: 2}));
+      let output = coerce.object(new Map([['foo', 1], ['bar', 2]]));
       expect(output).to.be.ok;
       expect(output).to.be.an('object');
       expect(output.foo).to.equal(1);
