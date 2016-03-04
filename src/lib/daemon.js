@@ -17,15 +17,8 @@ const Daemon = exports.Daemon = class Daemon {
     };
   }
 
-  register (plugin) {
-    this.plugins.add(plugin);
-  }
-
-  unregister (plugin) {
-    this.plugins.delete(plugin);
-  }
-
   up () {
+
     let plugins = this.plugins;
     let up = (plugin) => {return plugin.up()};
 

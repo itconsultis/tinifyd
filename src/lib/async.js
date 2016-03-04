@@ -19,7 +19,7 @@ const Buffer = exports.Buffer = class Buffer {
    * @param {Function} task   a function that returns a promise
    * @return void
    */
-  add: function(task) {
+  add (task) {
     let opt = this.options
     let tasks = this.tasks
     let ttl = opt.task_timeout;

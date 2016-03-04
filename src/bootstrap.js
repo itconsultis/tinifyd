@@ -3,10 +3,10 @@
 const _ = require('lodash');
 const P = require('bluebird');
 const config = require('./config');
+const EventEmitter = require('events').EventEmitter;
 const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
 const mysql = require('mysql');
-const plugins = require('./lib/plugins');
 const Daemon = require('./lib/daemon').Daemon;
 
 module.exports = () => {
@@ -14,6 +14,11 @@ module.exports = () => {
   let container = new Container();
 
   return container.set('config', config)
+
+  .then(() => {
+    console.log('initializing event bus');
+    return container.set('eventbus', new EventEmitter());
+  })
 
   .then(() => {
     console.log('initializing tinify client');

@@ -1,7 +1,42 @@
+"use strict";
+
 const _ = require('lodash');
 const is = require('is');
-
+const notcoercable = new Error('got non-coercable input type');
 const coerce = exports.coerce = {};
+
+
+coerce.object = (input) => {
+  if (is.object(input)) {
+    return input;
+  }
+
+  let output = {};
+
+  if (!input) {
+    return output;
+  }
+
+  if (input instanceof Map) {
+    return _.assign(output, input.entries());
+  }
+
+  if (is.array(input)) {
+    return _.assign(output, input);
+  }
+
+  if (input instanceof Set) {
+    let i = 0;
+
+    for (let value of input.values()) {
+      output[i++] = value; 
+    }
+
+    return output;
+  }
+
+  throw notcoercable;
+};
 
 /**
  * @param {Object|Array|Map|Set} input
@@ -22,7 +57,7 @@ coerce.set = (input) => {
     _.each(input.values(), add);
   }
   else {
-    throw new Error('unexpected input type');
+    throw notcoercable;
   }
 
   return set;
