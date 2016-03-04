@@ -9,7 +9,8 @@ const gulp = require('gulp');
 const babel = require('gulp-babel')
 const fswatch = require('gulp-watch');
 const concat = require('gulp-concat');
-const hangforever = new P((resolve, reject) => null);
+const subprocess = require('child_process');
+const forever = new P((resolve, reject) => null);
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -64,30 +65,25 @@ const task = (name, fn) => {
 
 const tasks = {};
 
+tasks.test = task('test', () => {
+  let src = path.join(__dirname, 'src');
+  let subproc = subprocess.spawn('bin/mocha', {stdio: 'inherit', cwd: src});
+  let log = (loggable) => console.log(String(loggable));
 
-tasks.transpile = task('transpile', () => {
   return new P((resolve, reject) => {
-    gulp.src(['src/**/*.js'])
-      .pipe(babel({presets: ['es2015']}))
-      .pipe(concat('bundle.js'))
-      .pipe(gulp.dest('build'))
-      .on('end', resolve)
+    subproc.on('error', reject); 
+    subproc.on('end', resolve); 
   });
-});
+})
 
 
-tasks.watch = task('watch', () => {
-  if (!this.watching) {
-    this.watching = hangforever;
-    watch([SRC + '/**/*.js'], tasks.transpile);
-  }
-
-  return this.watching;
+tasks.watch = task('watch', (done) => {
+  watch([SRC + '/**/*.js'], tasks.test);
+  return P.resolve();
 });
 
 ///////////////////////////////////////////////////////////////////////////
 
-gulp.task('transpile', tasks.transpile);
-gulp.task('watch', tasks.watch);
-gulp.task('default', ['transpile'], tasks.watch);
+gulp.task('test', tasks.test);
+gulp.task('default', tasks.watch);
 

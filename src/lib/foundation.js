@@ -25,7 +25,7 @@ const Component = exports.Component = class Component extends EventEmitter {
   constructor (attrs) {
     super();
     this.attrs = this.defaults();
-    this.set(attrs);
+    attrs && this.set(attrs);
   }
 
   /**

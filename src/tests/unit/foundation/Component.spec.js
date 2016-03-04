@@ -51,13 +51,13 @@ describe('foundation.Component', () => {
 
     describe('#set()', () => {
 
-      it('single attribute assignment', () => {
+      it('assigns a single attribute at arity 2', () => {
         component.set('foo', 1);
         expect(component.attrs.foo).to.equal(1);
         expect(component.get('foo')).to.equal(1);
       })
 
-      it('batch attribute assignment', () => {
+      it('batch-assigns multiple attributes at arity 1', () => {
         component.set({foo: 1, bar: 2});
         expect(component.get('foo')).to.equal(1);
         expect(component.get('bar')).to.equal(2);
@@ -113,7 +113,7 @@ describe('foundation.Component', () => {
         component.emit('event');
       });
 
-      it('removes all listeners matching an event at arity 1', () => {
+      it('removes all events of a specific type at arity 1', () => {
         component.on('event', fail);
         component.on('event', fail);
         component.off('event');

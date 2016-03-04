@@ -26,6 +26,14 @@ describe('lang.coerce', () => {
       expect(output['1']).to.equal('bar');
     });
 
+    it('coerces a Map', () => {
+      let output = coerce.object(new Map({foo: 1, bar: 2}));
+      expect(output).to.be.ok;
+      expect(output).to.be.an('object');
+      expect(output.foo).to.equal(1);
+      expect(output.bar).to.equal(2);
+    });
+
     it('coerces a Set', () => {
       let output = coerce.object(new Set(['foo', 'bar']));
       expect(output).to.be.ok;
