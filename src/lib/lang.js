@@ -49,8 +49,8 @@ coerce.set = (input) => {
     return input;
   }
 
-  let set = new Set();
-  let add = (value) => {set.add(value)};
+  let output = new Set();
+  let add = (value) => {output.add(value)};
 
   if (is.array(input) || is.object(input)) {
     _.each(input, add);
@@ -62,6 +62,25 @@ coerce.set = (input) => {
     throw notcoercable;
   }
 
-  return set;
+  return output;
+};
+
+
+coerce.array = (input) => {
+  if (is.array(input)) {
+    return input;
+  }
+
+  let output = [];
+
+  if (input instanceof Set) {
+    output = input.entries(); 
+  }
+  else if (is.object(input)) {
+    _.each(input, (value, key) => {
+      output.push([key, value]);
+    })
+  }
+
 };
 

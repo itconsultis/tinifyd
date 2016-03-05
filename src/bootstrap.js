@@ -6,7 +6,7 @@ const config = require('./config');
 const EventEmitter = require('events').EventEmitter;
 const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const Daemon = require('./lib/daemon').Daemon;
 
 module.exports = () => {

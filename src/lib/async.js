@@ -1,18 +1,32 @@
 "use strict";
 
-const Buffer = exports.Buffer = class Buffer {
+const _ = require('lodash');
+const P = require('bluebird');
+const Component = require('./foundation').Component;
+
+///////////////////////////////////////////////////////////////////////////
+
+/**
+ * Buffer executes asynchronous tasks concurrently.
+ *
+ */
+const Buffer = exports.Buffer = class Buffer extends Component {
 
   defaults () {
     return {
+
+      // max number of concurrent tasks
       size: 10,
-      task_timeout: 10000,
+
+      // max duration a single task can run before eviction from the buffer
+      timeout: 10000,
     };
   }
 
-  constructor (options) {
+  constructor (...args) {
+    super(...args);
     this.tasks = [];
     this.buffer = [];
-    this.options = _.merge(this.defaults(), options || {});
   }
 
   /**
@@ -20,15 +34,17 @@ const Buffer = exports.Buffer = class Buffer {
    * @return void
    */
   add (task) {
-    let opt = this.options
     let tasks = this.tasks
-    let ttl = opt.task_timeout;
     let buffer = this.buffer;
+    let ttl = this.get('timeout');
+
+    let evict = (wrapper) = {
+      let index = buffer.indexOf(wrapper);
+      index > -1 && buffer.splice(index, 1);
+    };
 
     let next = (wrapper) => {
-      let index = buffer.indexOf(wrapper);
-
-      index > -1 && buffer.splice(index, 1);
+      evict(wrapper);
       this.next();
     };
 
@@ -44,6 +60,7 @@ const Buffer = exports.Buffer = class Buffer {
     };
 
     tasks.push(wrapper);
+
     this.next();
   }
 
@@ -52,19 +69,14 @@ const Buffer = exports.Buffer = class Buffer {
    * @return void
    */
   next () {
-    let opt = this.options
     let tasks = this.tasks
     let buffer = this.buffer
+    let size = this.get('size');
 
-    while (buffer.length < opt.size) {
+    while (buffer.length < size) {
       let wrapper = tasks.shift();
 
-      if (!wrapper) {
-          break;
-      }
-
-      buffer.push(wrapper);
-      wrapper();
+      wrapper && buffer.push(wrapper) && wrapper();
     }
   }
 

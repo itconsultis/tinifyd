@@ -34,11 +34,6 @@ wait_for_mysql () {
 }
 
 
-install_npm_dependencies () {
-    echo "Installing npm dependencies..."
-    docker exec $NODE_CONTAINER bash -c "cd src && npm --silent install"
-}
-
 
 run_migrations () {
     echo "Running migrations..."
@@ -61,7 +56,6 @@ containers_up () {
 
 
 containers_up
-install_npm_dependencies
 wait_for_mysql
 run_migrations
 start_process

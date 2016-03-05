@@ -36,7 +36,8 @@ const Component = exports.Component = class Component extends EventEmitter {
    *   changed:$attr    where "$attr" is the attribute name 
    *
    * @param {String} attr
-   * @return mixed
+   * @param mixed value
+   * @return void
    */
   set (attr, value) {
     let args = arguments;
@@ -46,7 +47,7 @@ const Component = exports.Component = class Component extends EventEmitter {
     }
 
     if (args.length === 1) {
-      let attrs = args[0] ? coerce.object(args[0]) : {};
+      let attrs = coerce.object(args[0]);
 
       return _.each(attrs, (value, attr) => {
         this.set(attr, value);
@@ -57,14 +58,12 @@ const Component = exports.Component = class Component extends EventEmitter {
     let next = this.mutate(attr, 'set', value);
     let different = current !== next;
 
-    let emit = () => {
-      this.emit('changed:' + attr, next);
-      this.emit('changed');
-    };
-
     this.attrs[attr] = next;
 
-    different && setImmediate(emit);
+    different && setImmediate(() => {
+      this.emit('changed:' + attr, next);
+      this.emit('changed');
+    });
   }
 
   /**
