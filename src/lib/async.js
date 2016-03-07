@@ -23,8 +23,8 @@ const Buffer = exports.Buffer = class Buffer extends Component {
     };
   }
 
-  constructor (...args) {
-    super(...args);
+  constructor (attrs) {
+    super(attrs);
     this.tasks = [];
     this.buffer = [];
   }
@@ -37,46 +37,53 @@ const Buffer = exports.Buffer = class Buffer extends Component {
     let tasks = this.tasks
     let buffer = this.buffer;
     let ttl = this.get('timeout');
+    let evicted = false;
+    let wrapper, evict, next;
+    let timeout = setTimeout(() => next(), ttl);
 
-    let evict = (wrapper) => {
-      let index = buffer.indexOf(wrapper);
-      index > -1 && buffer.splice(index, 1);
+    evict = (wrapper) => {
+      if (!evicted) {
+        let index = buffer.indexOf(wrapper);
+        index > -1 && buffer.splice(index, 1);
+        evicted = true;
+      }
     };
 
-    let next = (wrapper) => {
+    next = () => {
+      clearTimeout(timeout);
       evict(wrapper);
-      this.next();
+      this.drain();
     };
 
-    let wrapper = function() {
-      let expired = false;
-      let expire = () => {expired=true; next(wrapper);};
-      let timeout = setTimeout(expire, ttl);
-
-      task().then(() => {
-        clearTimeout(timeout);
-        !expired && next(wrapper);
-      });
+    wrapper = () => {
+      if (typeof task === 'function') {
+        return task().then(() => next());
+      }
+      return task.then(() => next());
     };
 
     tasks.push(wrapper);
 
-    this.next();
+    this.drain();
   }
 
   /**
    * @param void
    * @return void
    */
-  next () {
+  drain() {
     let tasks = this.tasks
     let buffer = this.buffer
     let size = this.get('size');
 
-    while (buffer.length < size) {
+    while (buffer.length <= size) {
       let wrapper = tasks.shift();
 
-      wrapper && buffer.push(wrapper) && wrapper();
+      if (!wrapper) {
+        break;
+      }
+
+      buffer.push(wrapper) && wrapper();
     }
   }
 
@@ -89,3 +96,45 @@ const Buffer = exports.Buffer = class Buffer extends Component {
   }
 
 }
+
+
+const Coordinator = exports.Coordinator = class Coordinator extends Component {
+
+  defaults () {
+    return {
+      buffers: [],
+    }
+  }
+
+  /**
+   * Add a task to a buffer
+   * @param {mixed} task    Promise or a Function that returns one
+   * @return void
+   */
+  add (task) {
+    this.smallest().add(task);
+  }
+
+  /**
+   * Return the smallest buffer
+   * @param void
+   * @return {async.Buffer}
+   */
+  smallest () {
+    let buffers = this.get('buffers');
+    let length = buffers.length;
+    let smallest = null;
+
+    for (let i = 0; i < length; i++) {
+      let buffer = buffers[i];
+
+      if (!smallest || buffer.size() < smallest.size()) {
+        smallest = buffer;
+      }
+    }
+
+    return smallest;
+  }
+
+}
+

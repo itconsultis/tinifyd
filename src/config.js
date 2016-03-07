@@ -34,14 +34,22 @@ module.exports = {
     ttl: 60000,
   },
 
+  buffers: {
+    count: get('TINIFYD_BUFFER_COUNT', 50),
+    size: get('TINIFYD_BUFFER_SIZE', 5), 
+    ttl: get('TINIFYD_BUFFER_TASK_TTL', 60000),
+  },
+
   paths: {
     source: get('TINIFYD_SOURCE_PATH'),
     temp: get('TINIFYD_TEMP_PATH', '/tmp/tinifyd'),
   },
+
   tinify: {
     host: get('TINIFYD_API_HOST', 'api.tinify.com'),
     key: get('TINIFYD_API_KEY', '_secure_'),
   },
+
   mysql: {
     host: get('TINIFYD_DB_HOST', 'localhost'),
     port: get('TINIFYD_DB_PORT', '3306'),

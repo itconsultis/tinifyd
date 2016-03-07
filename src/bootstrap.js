@@ -11,6 +11,7 @@ const Daemon = require('./lib/daemon').Daemon;
 const models = require('./lib/models');
 const chokidar = require('chokidar');
 const t = require('util').format;
+const dummy = require('./lib/dummy');
 const procedures = require('./lib/procedures');
 
 ///////////////////////////////////////////////////////////////////////////
@@ -39,7 +40,10 @@ module.exports = () => {
 
   .then(() => {
     console.log('initializing tinify client');
+    let tinify = dummy.tinify;
     tinify.key = config.tinify.key;
+
+    console.log(tinify);
     return container.set('tinify', tinify);
   })
 
@@ -66,7 +70,16 @@ module.exports = () => {
     console.log('initializing daemon');
 
     return container.set('daemon', () => {
-      let daemon = new Daemon({procedures: procedures});
+
+      let daemon = new Daemon({
+        container: container,
+        source: config.paths.source,
+        temp: config.paths.temp,
+        pipes: _.map(_.range(config.buffers.count), (i) => {
+          new async.Buffer({size: config.buffers.size});
+        }),
+      });
+
       return daemon.start().then(() => daemon);
     });
   })

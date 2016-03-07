@@ -12,26 +12,37 @@ const Daemon = exports.Daemon = class Daemon extends Component {
   defaults () {
     return {
       container: null,
-      pipes: _.map(_.range(10), (i) => new async.Buffer({size: 10}),
-      procedures: procedures,
+      buffers: _.map(_.range(50), (i) => new async.Buffer({size: 5}),
     };
   }
 
-  constructor (options) {
-    this.options = _.merge(this.defaults(), options || {});
+  /**
+   * Return a 
+   *
+   */
+  bindings () {
+    let container = this.get('container');
+    let watcher = container.get('watcher');
+
+    return [
+      [watcher, 'add', procedures.optimize],
+      [watcher, 'change', procedures.optimize],
+      [watcher, 'delete', procedures.remove],
+    ];
   }
 
   up () {
-    let container = this.get('
-
-    let procedures = this.get('procedures');
-    let optimize
-
-    procedures.
+    _.each(this.bindings(), (binding) {
+      let [subject, event, listener] = binding;
+      subject.on(event, listener);
+    });
   }
 
   down () {
-
+    _.each(this.bindings(), (binding) {
+      let [subject, event, listener] = binding;
+      subject.removeListener(event, listener);
+    });
   }
 
 }
