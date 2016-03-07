@@ -441,12 +441,24 @@ const BlobPathManager = exports.BlobPathManager = class BlobPathManager extends 
 
 const BlobPath = exports.BlobPath = class BlobPath extends Model {
 
+  defaults () {
+    return {
+      blob_id: null,
+      hash: null,
+      path: null,
+    };
+  }
+
+  persistent () {
+    return ['blob_id', 'hash', 'path'];
+  }
+
   table () {
     return 'blob_path';
   }
 }
 
-BlobPath.objects = new Manager({model: BlobPath});
+BlobPath.objects = new BlobPathManager({model: BlobPath});
 
 exports.BlobPath = BlobPath;
 
