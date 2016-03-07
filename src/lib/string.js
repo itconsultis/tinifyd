@@ -1,7 +1,5 @@
 "use strict";
 
-const _ = require('lodash');
-
 /**
  * Slugify a string
  * Attribution: https://gist.github.com/mathewbyrne/1280286

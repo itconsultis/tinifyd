@@ -8,8 +8,10 @@ const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
 const mysql = require('mysql2');
 const Daemon = require('./lib/daemon').Daemon;
+const models = require('./lib/models');
 const chokidar = require('chokidar');
 const t = require('util').format;
+const procedures = require('./lib/procedures');
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -25,19 +27,14 @@ module.exports = () => {
   })
 
   .then(() => {
-    console.log('initializing filesystem watcher');
-
-    let eventbus = container.get('eventbus');
-
-    let globs = _.map(['jpg', 'png'], (ext) => {
-      return t('%s/**/*.%s', config.paths.source, ext);
+    let watcher = chokidar.watch(Blob.objects.globs(), {
+      cwd: config.paths.source,
+      persistent: true,
     });
 
-    let watcher = chokidar.watch(globs, {persistent: 1}, (event, path) => {
-      eventbus.emit('file:' + event, path);
-    });
+    process.on('SIGTERM', () => watcher.close());
 
-    process.on('SIGTERM', () => {watcher.close()});
+    return container.set('watcher', watcher);
   })
 
   .then(() => {
@@ -52,6 +49,9 @@ module.exports = () => {
     return container.set('db', () => {
       let db = mysql.createConnection(config.mysql);
 
+      ///////////////////////
+      models.Manager.db = db;
+      ///////////////////////
 
       return new P((resolve, reject) => {
         db.connect((err) => {
@@ -66,12 +66,8 @@ module.exports = () => {
     console.log('initializing daemon');
 
     return container.set('daemon', () => {
-      return new Daemon({
-        container: container,
-        plugins: _.map(plugins, (plugin_class) => {
-          return new plugin_class(container);
-        }),
-      });
+      let daemon = new Daemon({procedures: procedures});
+      return daemon.start().then(() => daemon);
     });
   })
 

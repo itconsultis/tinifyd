@@ -3,33 +3,35 @@
 const _ = require('lodash');
 const P = require('bluebird');
 const coerce = require('./lang').coerce;
+const async = require('./async');
+const procedures = require('./procedures');
+const Component = require('./foundation').Component;
 
-const Daemon = exports.Daemon = class Daemon {
-
-  constructor (options) {
-    this.options = _.merge(this.defaults(), options || {});
-    this.plugins = coerce.set(this.options.plugins);
-  }
+const Daemon = exports.Daemon = class Daemon extends Component {
 
   defaults () {
     return {
-      plugins: new Set(),
+      container: null,
+      pipes: _.map(_.range(10), (i) => new async.Buffer({size: 10}),
+      procedures: procedures,
     };
   }
 
+  constructor (options) {
+    this.options = _.merge(this.defaults(), options || {});
+  }
+
   up () {
+    let container = this.get('
 
-    let plugins = this.plugins;
-    let up = (plugin) => {return plugin.up()};
+    let procedures = this.get('procedures');
+    let optimize
 
-    return plugins.size ? P.all(_.map(plugins, up)) : P.resolve();
+    procedures.
   }
 
   down () {
-    let plugins = this.plugins;
-    let down = (plugin) => {return plugin.down()};
 
-    return plugins.size ? P.all(_.map(plugins, down)) : P.resolve();
   }
 
 }

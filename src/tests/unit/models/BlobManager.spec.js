@@ -16,11 +16,11 @@ describe('models.BlobManager', () => {
     manager = new BlobManager();
   });
 
-  describe('.instance()', () => {
+  describe('#blob()', () => {
     it('accepts a Buffer', (done) => {
       let buffer = new Buffer(fixture('umadbro.png'));
 
-      manager.instance(buffer).then((blob) => {
+      manager.blob(buffer).then((blob) => {
         expect(blob).to.be.an.instanceof(Blob);
         done();
       })
@@ -29,7 +29,7 @@ describe('models.BlobManager', () => {
     it('accepts a filepath', (done) => {
       let filepath = fixture('umadbro.png', true);
 
-      manager.instance(filepath).then((blob) => {
+      manager.blob(filepath).then((blob) => {
         expect(blob).to.be.an.instanceof(Blob);
         done();
       });
@@ -37,7 +37,7 @@ describe('models.BlobManager', () => {
 
   })
 
-  describe('.fromBuffer()', () => {
+  describe('#fromBuffer()', () => {
 
     it('raises an exception on invalid mime type', (done) => {
       let buffer = new Buffer(fixture('umadbro.txt'));
@@ -81,7 +81,7 @@ describe('models.BlobManager', () => {
     });
   });
 
-  describe('.fromFile()', () => {
+  describe('#fromFile()', () => {
 
     it('raises an exception on invalid mime type', (done) => {
       let filepath = fixture('umadbro.txt', true);
@@ -120,5 +120,18 @@ describe('models.BlobManager', () => {
       })
     });
   }); 
+
+  describe('#globs()', () => {
+
+    it('returns a array of globs that match JPG and PNG images', () => {
+      let globs = manager.globs();
+
+      expect(globs).to.be.an.instanceof(Array);
+      expect(globs.length).to.equal(3);
+      expect(globs.indexOf('./**/*.jpg') > -1).to.be.ok;
+      expect(globs.indexOf('./**/*.jpeg') > -1).to.be.ok;
+      expect(globs.indexOf('./**/*.png') > -1).to.be.ok;
+    });
+  })
 
 });

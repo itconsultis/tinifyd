@@ -6,15 +6,20 @@ const hash = require('./hash');
 const readfile = P.promisify(require('fs').readFile);
 const Component = require('./foundation').Component;
 const coerce = require('./lang').coerce;
+const string = require('./string');
 const tinify = require('tinify');
 const mmm = require('mmmagic');
 const Magic = mmm.Magic;
 const mime = require('./mime');
+const t = require('util').format;
+const moment = require('moment');
+const sql = require('./sql');
 
 ///////////////////////////////////////////////////////////////////////////
 
 const not_implemented = new Error('not implemented');
 const fail = P.reject();
+const ok = P.resolve();
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -22,7 +27,7 @@ const fail = P.reject();
  * Manager encapsulates various operations that can be performed on a
  * database table.
  */
-const Manager = exports.Manager = class Manager extends Component {
+const Manager = class Manager extends Component {
 
   db () {
     return this.get('db') || Manager.db;
@@ -59,10 +64,23 @@ const Manager = exports.Manager = class Manager extends Component {
     });
   }
 
+  /**
+   * Return a single model instance that matches the given parameters
+   * @param {Object} params
+   * @param 
+   */
   first (params, options) {
     let opts = _.defaults({limit: 1}, options || {});
 
-    return this.filter(params, opts).then((rows) => rows[0] || null);
+    return this.filter(params, opts).then((models) => {
+      let model = models.shift();
+
+      if (!model && opts.fail) {
+        throw new Error('model not found');
+      }
+
+      return model;
+    });
   }
 
   /**
@@ -70,13 +88,15 @@ const Manager = exports.Manager = class Manager extends Component {
    * @param {Object} params
    * @return {Promise}
    */
-  find (id) {
+  find (id, options) {
+    let opts = _.defaults({limit: 1}, options || {});
+
     let model = this.get('model').prototype;
     let params = {};
 
     params[model.pk()] = id;
 
-    return this.first(params);
+    return this.first(params, opts);
   }
 
   create (attrs) {
@@ -92,9 +112,11 @@ const Manager = exports.Manager = class Manager extends Component {
 Manager.db = null;
 //////////////////
 
+exports.Manager = Manager;
+
 ///////////////////////////////////////////////////////////////////////////
 
-const Model = exports.Model = class Model extends Component {
+const Model = class Model extends Component {
 
   /**
    * Return the model manager instance
@@ -179,15 +201,44 @@ const Model = exports.Model = class Model extends Component {
     return fail;
   }
 
+  /**
+   * @param void
+   * @return {Promise}
+   */
   delete () {
     return fail;
   }
 
 }
 
+exports.Model = Model;
+
 ///////////////////////////////////////////////////////////////////////////
 
-const Semaphore = exports.Semaphore = class Semaphore extends Model {
+const SemaphoreManager = class SemaphoreManager extends Manager {
+
+  /**
+   * Remove semaphores older than maxage (milliseconds)
+   * @param {Number} maxage
+   * @return {Promise}
+   */
+  cleanup (maxage) {
+    let db = this.db();
+    let model = this.get('model').prototype;
+    let table = model.table();
+    let stmt = 'DELETE FROM `%s` WHERE `created_at` >= ?';
+    let threshold = moment().subtract(maxage, 'milliseconds');
+
+    return new P((resolve, reject) => {
+      db.execute(stmt, [sql.format.datetime(threshold)], (err) => {
+        err ? reject(err) : resolve();
+      });
+    })
+  }
+}
+
+
+const Semaphore = class Semaphore extends Model {
 
   persistent () {
     return [
@@ -203,12 +254,15 @@ const Semaphore = exports.Semaphore = class Semaphore extends Model {
 
   set key (value) {
     this.attrs.id = hash.digest(value);
-    return value;
+    return string.slug(value);
   }
 
 }
 
+
 Semaphore.objects = new Manager({model: Semaphore});
+
+exports.Semaphore = Semaphore;
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -219,15 +273,20 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
       model: Blob,
       mime: mime,
       tinify: tinify,
-      allowed: new Set(['image/jpeg', 'image/png']),
+      allowed: {
+        'image/jpeg': ['jpeg', 'jpg'],
+        'image/png': ['png'],
+      }
     };
   }
 
-  set allowed (value) {
-    return coerce.set(value);
+  globs (source) {
+    return _.flatten(_.map(this.get('allowed'), (exts, type) => {
+      return _.map(exts, (ext) => t('%s/**/*.%s', source || '.', ext));
+    }))
   }
 
-  instance (arg) {
+  blob (arg) {
     if (arg instanceof Buffer) {
       return this.fromBuffer(arg);
     }
@@ -247,7 +306,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     let sum = hash.digest(buffer);
 
     return mime.type(buffer).then((type) => {
-      if (!allowed.has(type)) {
+      if (!allowed.hasOwnProperty(type)) {
         throw new Error('illegal mime type'); 
       }
     })
@@ -262,15 +321,17 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
 
 }
 
+exports.BlobManager = BlobManager;
 
 const Blob = exports.Blob = class Blob extends Model {
 
   persistent () {
-    return ['hash'];
+    return ['id', 'hash'];
   }
 
   defaults () {
     return {
+      id: null,
       hash: null,
       buffer: null,
       optimized: false,
@@ -319,15 +380,18 @@ const Blob = exports.Blob = class Blob extends Model {
   }
 
   locked () {
-    let semaphores = this.get('semaphores');
+    // TODO: implement me
+    return ok;
   }
 
   lock () {
-    return fail;
+    // TODO: implement me
+    return ok;
   }
 
   unlock () {
-    return fail;
+    // TODO: implement me
+    return ok;
   }
 
   /**
@@ -335,20 +399,45 @@ const Blob = exports.Blob = class Blob extends Model {
    * @param void
    * @return {Promise}
    */
-  paths () {
+  paths (options) {
+    let opts = _.defaults(options || {}, {strings: true});
+
     let manager = this.get('paths');
+    let params = {blob_id: this.get('id')};
 
-    return manager.filter({blob_id: this.get('hash')})
-
-    .then((paths) => _.map(paths, (path) => path.path));
+    return manager.filter(params).then((blobpaths) => {
+      if (opts.strings) {
+        return _.map(blobpaths, (blobpath) => blobpath.get('path'));
+      }
+      return blobpaths;
+    });
   }
 
 }
 
+Blob.objects = new BlobManager();
 
-Blob.objects = new BlobManager({model: Blob, tinify: tinify});
+exports.Blob = Blob;
 
 ///////////////////////////////////////////////////////////////////////////
+
+const BlobPathManager = exports.BlobPathManager = class BlobPathManager extends Model {
+
+  defaults () {
+    return {
+      model: BlobPath,
+    }
+  }
+
+  /**
+   * Return a single BlobPath matching the given filepath
+   *
+   */
+  match (filepath) {
+    return this.first({hash: hash.digest(filepath)});
+  }
+}
+
 
 const BlobPath = exports.BlobPath = class BlobPath extends Model {
 
@@ -358,5 +447,9 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
 }
 
 BlobPath.objects = new Manager({model: BlobPath});
+
+exports.BlobPath = BlobPath;
+
+///////////////////////////////////////////////////////////////////////////
 
 

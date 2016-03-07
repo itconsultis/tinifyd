@@ -29,6 +29,11 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')
 
 module.exports = {
   debug: Boolean(get('TINIFYD_DEBUG', false)),
+
+  semaphore: {
+    ttl: 60000,
+  },
+
   paths: {
     source: get('TINIFYD_SOURCE_PATH'),
     temp: get('TINIFYD_TEMP_PATH', '/tmp/tinifyd'),
