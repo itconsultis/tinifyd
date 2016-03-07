@@ -38,7 +38,7 @@ const Buffer = exports.Buffer = class Buffer extends Component {
     let buffer = this.buffer;
     let ttl = this.get('timeout');
 
-    let evict = (wrapper) = {
+    let evict = (wrapper) => {
       let index = buffer.indexOf(wrapper);
       index > -1 && buffer.splice(index, 1);
     };

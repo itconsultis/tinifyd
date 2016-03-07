@@ -3,5 +3,6 @@ build/*
 docker-compose.yml
 src/.env
 
+npm-debug.log
 *.swp
 *.swo

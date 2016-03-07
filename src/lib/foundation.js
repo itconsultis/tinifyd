@@ -24,8 +24,49 @@ const Component = exports.Component = class Component extends EventEmitter {
    */
   constructor (attrs) {
     super();
+
     this.attrs = this.defaults();
-    attrs && this.set(attrs);
+
+    if (attrs) {
+      this.mute();
+      this.set(attrs);
+      this.unmute();
+    }
+  }
+
+  /**
+   * @param void
+   * @return {Boolean}
+   */
+  muted () {
+    return this._muted;
+  }
+
+  /**
+   * Prevent the component from emitting events
+   * @param void
+   * @return void
+   */
+  mute () {
+    this._muted = true;
+  }
+
+  /**
+   * Allow the component instance to emit events
+   * @param void
+   * @return void
+   */
+  unmute () {
+    this._muted = false;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  emit () {
+    if (!this.muted()) {
+      EventEmitter.prototype.emit.apply(this, arguments);
+    }
   }
 
   /**
@@ -60,10 +101,12 @@ const Component = exports.Component = class Component extends EventEmitter {
 
     this.attrs[attr] = next;
 
-    different && setImmediate(() => {
-      this.emit('changed:' + attr, next);
-      this.emit('changed');
-    });
+    if (!this.muted() && different) {
+      setImmediate(() => {
+        this.emit('changed:' + attr, next);
+        this.emit('changed');
+      });
+    }
   }
 
   /**

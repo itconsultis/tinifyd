@@ -8,6 +8,10 @@ const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
 const mysql = require('mysql2');
 const Daemon = require('./lib/daemon').Daemon;
+const chokidar = require('chokidar');
+const t = require('util').format;
+
+///////////////////////////////////////////////////////////////////////////
 
 module.exports = () => {
 
@@ -18,6 +22,22 @@ module.exports = () => {
   .then(() => {
     console.log('initializing event bus');
     return container.set('eventbus', new EventEmitter());
+  })
+
+  .then(() => {
+    console.log('initializing filesystem watcher');
+
+    let eventbus = container.get('eventbus');
+
+    let globs = _.map(['jpg', 'png'], (ext) => {
+      return t('%s/**/*.%s', config.paths.source, ext);
+    });
+
+    let watcher = chokidar.watch(globs, {persistent: 1}, (event, path) => {
+      eventbus.emit('file:' + event, path);
+    });
+
+    process.on('SIGTERM', () => {watcher.close()});
   })
 
   .then(() => {
@@ -32,10 +52,10 @@ module.exports = () => {
     return container.set('db', () => {
       let db = mysql.createConnection(config.mysql);
 
-      process.once('SIGTERM', () => {db.end()});
 
       return new P((resolve, reject) => {
         db.connect((err) => {
+          process.once('SIGTERM', () => {db.end()});
           err ? reject(err) : resolve(db); 
         });
       });

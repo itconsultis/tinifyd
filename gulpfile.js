@@ -6,7 +6,6 @@ const _ = require('lodash');
 const P = require('bluebird');
 const path = require('path');
 const gulp = require('gulp');
-const babel = require('gulp-babel')
 const fswatch = require('gulp-watch');
 const concat = require('gulp-concat');
 const subprocess = require('child_process');
@@ -39,7 +38,7 @@ const watch = (globs, task) => {
     }
   };
 
-  fswatch(globs, {usePolling: true}, (vinyl) => {
+  fswatch(globs, {usePolling: false}, (vinyl) => {
     clearTimeout(debounce);
     debounce = setTimeout(wrapper, 100);
   });
