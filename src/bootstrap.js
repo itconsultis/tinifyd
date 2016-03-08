@@ -80,12 +80,12 @@ module.exports = () => {
   /////////////////////////////////////////////////////////////////////////
 
   .then(() => {
-    app.get('log').info('initializing tinify');
+    app.get('log').info('initializing tinify (dummy)');
 
     let tinify = dummy.tinify;
+
     tinify.key = config.tinify.key;
 
-    console.log(tinify);
     return app.set('tinify', tinify);
   })
 
