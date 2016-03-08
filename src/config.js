@@ -30,15 +30,9 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')
 module.exports = {
   debug: Boolean(get('TINIFYD_DEBUG', false)),
 
-  semaphore: {
-    ttl: 60000,
-  },
-
-  buffers: {
-    count: get('TINIFYD_BUFFER_COUNT', 50),
-    size: get('TINIFYD_BUFFER_SIZE', 5), 
-    ttl: get('TINIFYD_BUFFER_TASK_TTL', 60000),
-  },
+  plugins: get('TINIFYD_PLUGINS'),
+  concurrency: get('TINIFYD_CONCURRENCY', 64),
+  lock_ttl: get('TINIFYD_LOCK_TIMEOUT', 300000),
 
   paths: {
     source: get('TINIFYD_SOURCE_PATH'),
@@ -47,7 +41,7 @@ module.exports = {
 
   tinify: {
     host: get('TINIFYD_API_HOST', 'api.tinify.com'),
-    key: get('TINIFYD_API_KEY', '_secure_'),
+    key: get('TINIFYD_API_KEY', '--secure--'),
   },
 
   mysql: {

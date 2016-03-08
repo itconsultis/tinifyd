@@ -26,8 +26,8 @@ storage:
   container_name: ${PROJECT}_storage
   volumes:
     - /opt/tinifyd
-    - ./bin:/opt/tinifyd/bin
-    - ./src:/opt/tinifyd/src
+    - ./src:/opt/tinifyd
+    - ./logs/pm2:/var/log/pm2
     #- ./logs/mysql:/var/log/mysql
     #- ./data/mysql:/var/lib/mysql
     #- ./env/db/etc/mysql:/etc/mysql

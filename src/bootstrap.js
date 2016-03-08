@@ -13,44 +13,55 @@ const chokidar = require('chokidar');
 const t = require('util').format;
 const dummy = require('./lib/dummy');
 const procedures = require('./lib/procedures');
+const d3 = require('d3-queue');
+const winston = require('winston');
 
 ///////////////////////////////////////////////////////////////////////////
 
 module.exports = () => {
 
-  let container = new Container();
+  let app = new Container();
 
-  return container.set('config', config)
+  return app.set('config', config)
+
+  /////////////////////////////////////////////////////////////////////////
 
   .then(() => {
-    console.log('initializing event bus');
-    return container.set('eventbus', new EventEmitter());
+    return app.set('log', new (winston.Logger)({
+      transports: [
+        new (winston.transports.Console)(),
+      ]
+    }));
   })
 
+  /////////////////////////////////////////////////////////////////////////
+
   .then(() => {
-    let watcher = chokidar.watch(Blob.objects.globs(), {
+    app.get('log').info('initializing eventbus');
+    return app.set('eventbus', new EventEmitter());
+  })
+
+  /////////////////////////////////////////////////////////////////////////
+
+  .then(() => {
+    app.get('log').info('initializing watcher');
+
+    let watcher = chokidar.watch(models.Blob.objects.globs(), {
       cwd: config.paths.source,
       persistent: true,
     });
 
     process.on('SIGTERM', () => watcher.close());
 
-    return container.set('watcher', watcher);
+    return app.set('watcher', watcher);
   })
 
-  .then(() => {
-    console.log('initializing tinify client');
-    let tinify = dummy.tinify;
-    tinify.key = config.tinify.key;
-
-    console.log(tinify);
-    return container.set('tinify', tinify);
-  })
+  /////////////////////////////////////////////////////////////////////////
 
   .then(() => {
-    console.log('initializing mysql connection');
+    app.get('log').info('initializing db');
 
-    return container.set('db', () => {
+    return app.set('db', () => {
       let db = mysql.createConnection(config.mysql);
 
       ///////////////////////
@@ -66,24 +77,39 @@ module.exports = () => {
     });
   })
 
-  .then(() => {
-    console.log('initializing daemon');
+  /////////////////////////////////////////////////////////////////////////
 
-    return container.set('daemon', () => {
+  .then(() => {
+    app.get('log').info('initializing tinify');
+
+    let tinify = dummy.tinify;
+    tinify.key = config.tinify.key;
+
+    console.log(tinify);
+    return app.set('tinify', tinify);
+  })
+
+  /////////////////////////////////////////////////////////////////////////
+
+  .then(() => {
+    app.get('log').info('starting tinifyd');
+
+    return app.set('daemon', () => {
 
       let daemon = new Daemon({
-        container: container,
+        app: app,
         source: config.paths.source,
         temp: config.paths.temp,
-        pipes: _.map(_.range(config.buffers.count), (i) => {
-          new async.Buffer({size: config.buffers.size});
-        }),
+        buffer: d3.queue(config.concurrency),
+        plugins: config.plugins.split(',').map((name) => name.trim()),
       });
 
-      return daemon.start().then(() => daemon);
+      return daemon.up().then(() => daemon);
     });
   })
 
-  // always resolve the container itself at the very end
-  .then(() => container);
+  /////////////////////////////////////////////////////////////////////////
+
+  // always resolve the app itself at the very end
+  .then(() => app);
 };

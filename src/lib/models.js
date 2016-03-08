@@ -18,8 +18,6 @@ const sql = require('./sql');
 ///////////////////////////////////////////////////////////////////////////
 
 const not_implemented = new Error('not implemented');
-const fail = P.reject();
-const ok = P.resolve();
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -44,6 +42,9 @@ const Manager = class Manager extends Component {
     let db = this.db();
     let model = this.get('model').prototype;
     let table = model.table();
+
+console.log('table is ' + table);
+
     let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
     let conditionals = bindings.join(' AND ');
     let stmt = t('SELECT * FROM `%s` WHERE %s', table, conditionals);
@@ -198,7 +199,7 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   update () {
-    return fail;
+    return P.reject();
   }
 
   /**
@@ -206,7 +207,7 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   delete () {
-    return fail;
+    return P.reject();
   }
 
 }
@@ -217,20 +218,30 @@ exports.Model = Model;
 
 const SemaphoreManager = class SemaphoreManager extends Manager {
 
+  defaults () {
+    return {
+      model: Semaphore,
+    };
+  }
+
   /**
    * Remove semaphores older than maxage (milliseconds)
-   * @param {Number} maxage
+   * @param {Number}   maxage
+   * @param {Date}     now         - for testing
    * @return {Promise}
    */
-  cleanup (maxage) {
+  cleanup (maxage, now) {
     let db = this.db();
     let model = this.get('model').prototype;
     let table = model.table();
-    let stmt = 'DELETE FROM `%s` WHERE `created_at` >= ?';
-    let threshold = moment().subtract(maxage, 'milliseconds');
+    let stmt = t('DELETE FROM `%s` WHERE `created_at` >= ?', table);
+    let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
+    let sqltime = sql.format.datetime(threshold);
+
+    console.log(sqltime);
 
     return new P((resolve, reject) => {
-      db.execute(stmt, [sql.format.datetime(threshold)], (err) => {
+      db.execute(stmt, [sqltime], (err) => {
         err ? reject(err) : resolve();
       });
     })
@@ -244,6 +255,10 @@ const Semaphore = class Semaphore extends Model {
     return [
       'key',
     ];
+  }
+
+  table () {
+    return 'semaphore';
   }
 
   defaults () {
@@ -260,7 +275,7 @@ const Semaphore = class Semaphore extends Model {
 }
 
 
-Semaphore.objects = new Manager({model: Semaphore});
+Semaphore.objects = new SemaphoreManager();
 
 exports.Semaphore = Semaphore;
 
@@ -381,17 +396,17 @@ const Blob = exports.Blob = class Blob extends Model {
 
   locked () {
     // TODO: implement me
-    return ok;
+    return P.resolve();
   }
 
   lock () {
     // TODO: implement me
-    return ok;
+    return P.resolve();
   }
 
   unlock () {
     // TODO: implement me
-    return ok;
+    return P.resolve();
   }
 
   /**
@@ -431,7 +446,8 @@ const BlobPathManager = exports.BlobPathManager = class BlobPathManager extends 
 
   /**
    * Return a single BlobPath matching the given filepath
-   *
+   * @param {String} filepath
+   * @return {Promise}
    */
   match (filepath) {
     return this.first({hash: hash.digest(filepath)});

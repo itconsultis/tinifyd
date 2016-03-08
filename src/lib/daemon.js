@@ -3,46 +3,69 @@
 const _ = require('lodash');
 const P = require('bluebird');
 const coerce = require('./lang').coerce;
-const async = require('./async');
-const procedures = require('./procedures');
 const Component = require('./foundation').Component;
+const d3 = require('d3-queue');
+
+const not_implemented = new Error('not implemented');
+
+////////////////////////////////////////////////////////////////////////////
 
 const Daemon = exports.Daemon = class Daemon extends Component {
 
   defaults () {
     return {
-      container: null,
-      buffers: _.map(_.range(50), (i) => new async.Buffer({size: 5}),
+      app: null,
+      source: '/path/to/images',
+      temp: '/path/to/writable/directory',
+      buffer: d3.queue(64),
+
+      // list of enabled plugin names
+      plugins: [],
     };
   }
 
-  /**
-   * Return a 
-   *
-   */
-  bindings () {
-    let container = this.get('container');
-    let watcher = container.get('watcher');
+  constructor (attrs) {
+    super(attrs);
 
-    return [
-      [watcher, 'add', procedures.optimize],
-      [watcher, 'change', procedures.optimize],
-      [watcher, 'delete', procedures.remove],
-    ];
+    this.plugins = {};
+
+    let plugins_available = require('./plugins');
+
+    _.each(this.get('plugins'), (name) => {
+      let Plugin = plugins_available[name];
+      this.plugins[name] = new Plugin(this.attrs);
+    });
   }
 
   up () {
-    _.each(this.bindings(), (binding) {
-      let [subject, event, listener] = binding;
-      subject.on(event, listener);
-    });
+    return P.all(_.map(this.plugins, (plugin) => plugin.up()));
   }
 
   down () {
-    _.each(this.bindings(), (binding) {
-      let [subject, event, listener] = binding;
-      subject.removeListener(event, listener);
-    });
+    return P.all(_.map(this.plugins, (plugin) => plugin.down()));
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+const Plugin = exports.Plugin = class Plugin extends Component {
+
+  defaults () {
+    return {
+      app: null,
+      source: '/path/to/images',
+      temp: '/path/to/writable/directory',
+      buffer: d3.queue(64),
+    };
+  }
+
+  up () {
+    throw not_implemented;
+  }
+
+  down () {
+    throw not_implemented;
   }
 
 }

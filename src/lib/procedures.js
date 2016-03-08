@@ -48,7 +48,7 @@ const optimize = exports.optimize = (filepath) => {
 
 const remove = exports.remove = (filepath) => {
 
-  return BlobPath.objects.findByPath(filepath)
+  return BlobPath.objects.match(filepath)
 
   .then((blobpath) => {
     return blobpath.blob()
@@ -73,13 +73,8 @@ const remove = exports.remove = (filepath) => {
  *
  */
 const search = exports.search = (source, globfn) => {
-  let globs = _.flatten(_.map(Blob.objects.allowed(), (exts, type) => {
-    return _.map(exts, (ext) => t('%s/**/*.%s', source, ext)); 
-  }))
-
-  console.log(globs);
-
-  return (globfunc || glob)(globs, {nocase: true}) ;
+  return (globfn || glob)(Blob.objects.globs(), {nocase: true}) ;
 };
+
 
 

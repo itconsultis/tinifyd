@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -aeu -o pipefail
+set -xaeu -o pipefail
 
 if [ ! -f ./src/.env ]; then
     cp ./src/.env.example ./src/.env
@@ -19,31 +19,41 @@ DB_CONTAINER=${PROJECT}_db
 STORAGE_CONTAINER=${PROJECT}_storage
 
 # wait for mysql server to start accepting queries
-wait_for_mysql () {
+init_mysql () {
     echo "Waiting for MySQL server to start accepting queries..."
     while [ 0 ];
     do
         cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"'"
-        result=$(docker exec -ti tinifyd_db bash -c "$cmd" || true)
+        result=$(docker exec $DB_CONTAINER bash -c "$cmd" || true)
         sleep 2
 
         if [[ "$result" =~ "READY" ]]; then
             break
         fi
     done
+
+    #if [ "$ENVIRONMENT" == "local" ]; then
+    #    docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e 'SET GLOBAL general_log = 1' "
+    #    docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e 'SET GLOBAL general_log_file = \"/dev/stdout\"'"
+    #fi
 }
 
+
+npm_tasks () {
+    echo "Rebuilding npm dependencies..."
+    #docker exec $NODE_CONTAINER bash -c "npm rebuild"
+}
 
 
 run_migrations () {
     echo "Running migrations..."
-    docker exec $NODE_CONTAINER bash -c "cd src && bin/migrate up"
+    docker exec $NODE_CONTAINER bash -c "bin/migrate up"
 }
 
 
 start_process () {
     echo "Starting PM2 process manager"
-    docker exec $NODE_CONTAINER bash -c "cd src && bin/pm2 start index.js"
+    docker exec $NODE_CONTAINER bash -c "bin/pm2 start -l /var/log/pm2/pm2.log index.js "
 }
 
 
@@ -55,8 +65,19 @@ containers_up () {
 }
 
 
+fix_timezones () {
+    containers="$NODE_CONTAINER $DB_CONTAINER"
+    for container in $containers; do
+        docker exec $container bash -c "echo \"$TIMEZONE\" > /etc/timezone"
+        docker exec $container bash -c "dpkg-reconfigure -f noninteractive tzdata"
+    done
+}
+
+
 containers_up
-wait_for_mysql
+fix_timezones
+npm_tasks
+init_mysql
 run_migrations
 start_process
 
