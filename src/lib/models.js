@@ -7,7 +7,6 @@ const readfile = P.promisify(require('fs').readFile);
 const Component = require('./foundation').Component;
 const coerce = require('./lang').coerce;
 const string = require('./string');
-const tinify = require('tinify');
 const mmm = require('mmmagic');
 const Magic = mmm.Magic;
 const mime = require('./mime');
@@ -17,7 +16,9 @@ const sql = require('./sql');
 
 ///////////////////////////////////////////////////////////////////////////
 
-const not_implemented = new Error('not implemented');
+const NotImplemented = class NotImplemented extends Error {}
+const AlreadyOptimized = class AlreadyOptimized extends Error {}
+const Conflict = class Conflict extends Error {}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -142,7 +143,7 @@ const Model = class Model extends Component {
    * @return {String}
    */
   table () {
-    throw not_implemented;
+    throw new NotImplemented();
   }
 
   /**
@@ -248,7 +249,6 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
   }
 }
 
-
 const Semaphore = class Semaphore extends Model {
 
   persistent () {
@@ -274,7 +274,6 @@ const Semaphore = class Semaphore extends Model {
 
 }
 
-
 Semaphore.objects = new SemaphoreManager();
 
 exports.Semaphore = Semaphore;
@@ -287,7 +286,6 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     return {
       model: Blob,
       mime: mime,
-      tinify: tinify,
       allowed: {
         'image/jpeg': ['jpeg', 'jpg'],
         'image/png': ['png'],
@@ -338,6 +336,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
 
 exports.BlobManager = BlobManager;
 
+
 const Blob = exports.Blob = class Blob extends Model {
 
   persistent () {
@@ -355,33 +354,37 @@ const Blob = exports.Blob = class Blob extends Model {
     };
   }
 
-  optimize () {
-    let tinify = this.manager().get('tinify');
+  optimize (tinify) {
+    let manager = this.manager();
     let buffer = this.get('buffer');
-    let lock = () => this.lock;
-    let unlock = () => this.unlock;
+    let attrs = this.attrs;
 
     return this.optimized()
 
     .then((optimized) => {
       if (optimized) {
-        return buffer;
+        throw new AlreadyOptimized();
       }
+    })
 
-      return lock().then(() => {
-        return new P((resolve, reject) => {
-          tinify.fromBuffer(buffer).toBuffer((err, result) => {
-            err ? reject(err) : resolve(result);
-          });
-        })
-        .then((optimized_buffer) => {
-          return unlock().then(() => optimized_buffer);
-        })
+    .then(() => this.lock())
+
+    .then(() => {
+      return new P((resolve, reject) => {
+        tinify.fromBuffer(buffer).toBuffer((err, result) => {
+          err ? reject(err) : resolve(result);
+        });
       })
     })
 
     .then((optimized_buffer) => {
+      return this.unlock().then(() => optimized_buffer)
+    })
+
+    .then((optimized_buffer) => {
       this.set('buffer', buffer);
+      this.set('hash', hash.digest(buffer));
+      return this.save();
     })
   }
 
@@ -389,23 +392,30 @@ const Blob = exports.Blob = class Blob extends Model {
     let manager = this.manager();
     let sum = this.get('hash');
 
-    return manager.filter({hash: sum}, {limit: 1}).then((models) => {
-      return models.length > 0;
-    });
+    return manager.first({hash: sum}).then((models) => models.length > 0);
   }
 
   locked () {
-    // TODO: implement me
     return P.resolve();
   }
 
+  /**
+   * Insert a row into the semaphore table. A rejection error means the blob
+   * already in the process of being optimized.
+   * @param void
+   * @return {Promise}
+   */
   lock () {
-    // TODO: implement me
-    return P.resolve();
+    let sum = this.get('hash');
+
+    return Semaphore.objects.create({hash: sum})
+
+    .catch((e) => {
+      throw new Conflict('lock conflict on blob ' + sum);
+    })
   }
 
   unlock () {
-    // TODO: implement me
     return P.resolve();
   }
 
@@ -436,7 +446,7 @@ exports.Blob = Blob;
 
 ///////////////////////////////////////////////////////////////////////////
 
-const BlobPathManager = exports.BlobPathManager = class BlobPathManager extends Model {
+const BlobPathManager = class BlobPathManager extends Model {
 
   defaults () {
     return {
@@ -454,6 +464,7 @@ const BlobPathManager = exports.BlobPathManager = class BlobPathManager extends 
   }
 }
 
+exports.BlobPathManager = BlobPathManager;
 
 const BlobPath = exports.BlobPath = class BlobPath extends Model {
 

@@ -9,11 +9,13 @@ console.log(require('../daemon'));
 
 ////////////////////////////////////////////////////////////////////////////
 
+const EVERY_HOUR = 3600 * 1000;
+
 module.exports = class Janitor extends Plugin {
 
   up () {
     this._iterate = () => this.iterate();
-    this.interval = setInterval(this._iterate, 60000);
+    this.interval = setInterval(this._iterate, 3600 * 1000);
 
     setImmediate(this._iterate);
 

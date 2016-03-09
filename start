@@ -53,7 +53,7 @@ run_migrations () {
 
 start_process () {
     echo "Starting PM2 process manager"
-    docker exec $NODE_CONTAINER bash -c "bin/pm2 start -l /var/log/pm2/pm2.log index.js "
+    docker exec $NODE_CONTAINER bash -c "bin/pm2 start .pm2.json "
 }
 
 
@@ -80,4 +80,5 @@ npm_tasks
 init_mysql
 run_migrations
 start_process
+tail -f logs/pm2/*.log
 
