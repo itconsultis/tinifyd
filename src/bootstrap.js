@@ -12,7 +12,6 @@ const models = require('./lib/models');
 const chokidar = require('chokidar');
 const t = require('util').format;
 const dummy = require('./lib/dummy');
-const procedures = require('./lib/procedures');
 const d3 = require('d3-queue');
 const winston = require('winston');
 
