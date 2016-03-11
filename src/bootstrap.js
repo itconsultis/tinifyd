@@ -47,7 +47,7 @@ module.exports = () => {
     app.get('log').info('initializing watcher');
 
     let watcher = chokidar.watch(models.Blob.objects.globs(), {
-      cwd: config.paths.source,
+      cwd: config.opt.source,
       persistent: true,
     });
 
@@ -98,10 +98,9 @@ module.exports = () => {
 
       let daemon = new Daemon({
         app: app,
-        source: config.paths.source,
-        temp: config.paths.temp,
-        buffer: d3.queue(config.concurrency),
-        plugins: config.plugins.split(',').map((name) => name.trim()),
+        source: config.opt.source,
+        temp: config.opt.temp,
+        buffer: d3.queue(config.opt.concurrency),
       });
 
       return daemon.up().then(() => daemon);

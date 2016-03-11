@@ -43,9 +43,6 @@ const Manager = class Manager extends Component {
     let db = this.db();
     let model = this.get('model').prototype;
     let table = model.table();
-
-console.log('table is ' + table);
-
     let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
     let conditionals = bindings.join(' AND ');
     let stmt = t('SELECT * FROM `%s` WHERE %s', table, conditionals);
@@ -156,8 +153,8 @@ const Model = class Model extends Component {
   }
 
   /**
-   * Return a list that identifies non-primary-key attributes that appear in
-   * the database table
+   * Return a list that identifies *non-primary-key* attributes that
+   * have matching columns in the database table
    * @param void
    * @return {Array}
    */
@@ -239,11 +236,9 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
     let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
     let sqltime = sql.format.datetime(threshold);
 
-    console.log(sqltime);
-
     return new P((resolve, reject) => {
-      db.execute(stmt, [sqltime], (err) => {
-        err ? reject(err) : resolve();
+      db.execute(stmt, [sqltime], (err, result) => {
+        err ? reject(err) : resolve(result);
       });
     })
   }

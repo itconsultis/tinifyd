@@ -30,11 +30,9 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')
 module.exports = {
   debug: Boolean(get('TINIFYD_DEBUG', false)),
 
-  plugins: get('TINIFYD_PLUGINS'),
-  concurrency: get('TINIFYD_CONCURRENCY', 64),
-  lock_ttl: get('TINIFYD_LOCK_TIMEOUT', 300000),
-
-  paths: {
+  opt: {
+    concurrency: Number(get('TINIFYD_CONCURRENCY', 64)),
+    lockttl: Number(get('TINIFYD_LOCK_TIMEOUT', 300000)),
     source: get('TINIFYD_SOURCE_PATH'),
     temp: get('TINIFYD_TEMP_PATH', '/tmp/tinifyd'),
   },
@@ -50,6 +48,21 @@ module.exports = {
     database: get('TINIFYD_DB_NAME', 'domain'),
     user: get('TINIFYD_DB_USER', 'root'),
     password: get('TINIFYD_DB_PASS', 'root'),
+    namedPlaceholders: true,
   },
+
+  plugins: {
+
+    janitor: {
+      enabled: true,
+      frequency: 60 * 1000,
+    },
+
+    optimizer: {
+      enabled: true,
+    }
+
+  },
+
 };
 

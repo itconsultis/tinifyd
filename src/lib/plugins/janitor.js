@@ -5,17 +5,16 @@ const P = require('bluebird');
 const Plugin = require('../daemon').Plugin;
 const Semaphore = require('../models').Semaphore;
 
-console.log(require('../daemon'));
-
 ////////////////////////////////////////////////////////////////////////////
 
+const EVERY_MINUTE = 60 * 1000;
 const EVERY_HOUR = 3600 * 1000;
 
 module.exports = class Janitor extends Plugin {
 
   up () {
     this._iterate = () => this.iterate();
-    this.interval = setInterval(this._iterate, 3600 * 1000);
+    this.interval = setInterval(this._iterate, EVERY_HOUR);
 
     setImmediate(this._iterate);
 
@@ -33,9 +32,11 @@ module.exports = class Janitor extends Plugin {
     let config = app.get('config');
     let log = app.get('log');
 
-    log.info('cleaning up stale locks');
+    return Semaphore.objects.cleanup(config.opt.lockttl)
 
-    return Semaphore.objects.cleanup(config.lock_ttl);
+    .then((result) => {
+      log.info('cleaned up %s stale locks', result.affectedRows);
+    });
   }
 
 }
