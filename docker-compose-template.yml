@@ -28,6 +28,9 @@ storage:
     - /opt/tinifyd
     - ./src:/opt/tinifyd
     - ./logs/pm2:/var/log/pm2
+
+    - ./src/tests/fixtures:/var/lib/tinifyd/images
+    - ./tmp/tinifyd:/tmp/tinifyd
     #- ./logs/mysql:/var/log/mysql
     #- ./data/mysql:/var/lib/mysql
     #- ./env/db/etc/mysql:/etc/mysql

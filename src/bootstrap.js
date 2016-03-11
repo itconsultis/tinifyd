@@ -49,6 +49,10 @@ module.exports = () => {
     let watcher = chokidar.watch(models.Blob.objects.globs(), {
       cwd: config.opt.source,
       persistent: true,
+      awaitWriteFinish: {
+        stabilityThreshold: 15000,
+        pollInterval: 100,
+      },
     });
 
     process.on('SIGTERM', () => watcher.close());
@@ -100,8 +104,10 @@ module.exports = () => {
         app: app,
         source: config.opt.source,
         temp: config.opt.temp,
-        buffer: d3.queue(config.opt.concurrency),
+        queue: d3.queue(config.opt.concurrency),
       });
+
+      process.on('SIGTERM', () => daemon.down());
 
       return daemon.up().then(() => daemon);
     });

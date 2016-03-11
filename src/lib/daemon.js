@@ -2,6 +2,7 @@
 
 const _ = require('lodash');
 const P = require('bluebird');
+const path = require('path');
 const coerce = require('./lang').coerce;
 const Component = require('./foundation').Component;
 const d3 = require('d3-queue');
@@ -21,7 +22,7 @@ const Daemon = exports.Daemon = class Daemon extends Component {
       app: null,
       source: '/path/to/images',
       temp: '/path/to/writable/directory',
-      buffer: d3.queue(64),
+      queue: d3.queue(64),
     };
   }
 
@@ -34,12 +35,12 @@ const Daemon = exports.Daemon = class Daemon extends Component {
 
     this.plugins = {};
 
-    _.each(config.plugins, (plugin_config, name) => {
-      plugin_config = _.defaults(plugin_config[name] || {}, this.attrs);
+    _.each(config.plugins, (pconfig, name) => {
+      pconfig = _.defaults(pconfig || {}, this.attrs);
 
-      if (plugin_config.enabled) {
+      if (pconfig.enabled) {
         let PluginClass = plugins_available[name];
-        let plugin = new PluginClass(plugin_config);
+        let plugin = new PluginClass(pconfig);
         this.plugins[name] = plugin;
       }
     });
@@ -77,7 +78,7 @@ const Plugin = exports.Plugin = class Plugin extends Component {
       app: null,
       source: '/path/to/images',
       temp: '/path/to/writable/directory',
-      buffer: d3.queue(64),
+      queue: d3.queue(64),
     };
   }
 

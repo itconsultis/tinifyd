@@ -184,7 +184,7 @@ const Component = exports.Component = class Component extends EventEmitter {
       setImmediate(() => {
         this.off();
         resolve();
-      })
+      });
     });
   }
 

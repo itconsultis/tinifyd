@@ -13,24 +13,24 @@ const EVERY_HOUR = 3600 * 1000;
 module.exports = class Janitor extends Plugin {
 
   up () {
-    this._iterate = () => this.iterate();
-    this.interval = setInterval(this._iterate, EVERY_HOUR);
+    let iterate = () => this.iterate();
+    this.interval = setInterval(iterate, EVERY_MINUTE);
 
-    setImmediate(this._iterate);
+    setImmediate(iterate);
 
     return P.resolve();
   }
 
   down () {
     clearInterval(this.interval);
-    this._iterate = null;
     return P.resolve();
   }
 
   iterate () {
-    let app = this.get('app');
-    let config = app.get('config');
-    let log = app.get('log');
+    let config = this.app('config');
+    let log = this.app('log');
+
+    log.info('cleaning up stale locks');
 
     return Semaphore.objects.cleanup(config.opt.lockttl)
 

@@ -60,11 +60,13 @@ module.exports = class Optimizer extends Plugin {
   }
 
   one (relpath) {
-    let queue = this.app('queue');
+    let queue = this.get('queue');
     let log = this.app('log');
     let tinify = this.app('tinify');
     let config = this.app('config')
 
+    // the filesystem watcher emits paths relative to its cwd
+    // here we are deriving absolute source and temp paths from the relative path
     let abs = {
       source: this.source(relpath),
       temp: this.temp(relpath),
@@ -78,6 +80,8 @@ module.exports = class Optimizer extends Plugin {
       return new P((resolve, reject) => {
 
         queue.defer((done) => {
+          log.info('optimizing ' + relpath);
+
           return blob.optimize(tinify).then((optimized_buffer) => {
             fs.writeFile(abs.temp, optimized_buffer, (err) => {
               log.info('optimized ' + relpath); 
