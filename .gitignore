@@ -4,6 +4,9 @@ docker-compose.yml
 src/.env
 .env
 
+/logs/mysql/*
+/logs/pm2/*
+
 npm-debug.log
 *.swp
 *.swo
