@@ -37,6 +37,7 @@ init_mysql () {
         docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log = 1\"";
         docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log_file = '/var/log/mysql/mysql.log'\"";
         docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log = 1\"";
+        docker exec $NODE_CONTAINER bash -c "rm -rf $TINIFYD_TEMP_PATH/*";
     fi
 }
 

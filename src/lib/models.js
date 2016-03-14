@@ -593,7 +593,6 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
       blob_id: null,
       hash: null,
       path: null,
-      fs: fs,
     };
   }
 
@@ -615,13 +614,16 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
    * the prefix argument since we are storing paths relative to the source directory
    * @async
    * @param {String} prefix  path prefix
+   * @param {Object} filesystem   optional filesystem 
    * @return {Buffer}
    */
-  read (prefix) {
+  read (prefix, filesystem) {
+    filesystem = filesystem || fs;
+
     let abspath = path.join(prefix, this.get('path'));
 
     return new P((resolve, reject) => {
-      fs.readFile(abspath, 'binary', (err, buffer) => {
+      filesystem.readFile(abspath, 'binary', (err, buffer) => {
         err ? reject(err) : resolve(buffer);
       })
     });

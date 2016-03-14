@@ -10,6 +10,7 @@ const Blob = models.Blob;
 const BlobPath = models.BlobPath;
 const path = require('path');
 const e = require('../exceptions');
+const mkdirp = require('mkdirp');
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -27,17 +28,28 @@ const UnexpectedValue = e.UnexpectedValue;
  * @param {String} filemode    file perms
  * @return {models.Blob}
  */
-const optimize = (tinify, blob, outpath, filemode) => {
+const optimize = (tinify, blob, outpath, filemode, dirmode) => {
+  filemode = filemode || '0644';
+  dirmode = dirmode || '0755';
 
   return blob.optimize(tinify)
 
   .then((blob) => {
     let optimized_buffer = blob.get('buffer');
+
+    return new P((resolve, reject) => {
+      mkdirp(path.dirname(outpath), {mode: dirmode}, (err) => {
+        err ? reject(err) : resolve(optimized_buffer);
+      })
+    });
+  })
+
+  .then((optimized_buffer) => {
     return new P((resolve, reject) => {
       fs.writeFile(outpath, optimized_buffer, {mode: filemode, encoding: 'binary'}, (err) => {
         err ? reject(err) : resolve(blob);
-      }); 
-    })
+      });
+    }); 
   })
 
   .catch(AlreadyOptimized, (e) => {
@@ -67,7 +79,7 @@ const record_path = (blob, relpath) => {
 
   .then((blob_path) => {
     console.log(blob_path);
-    console.log('remembered blob %s at path %s', blob.get('id'), relpath);
+    console.log('optimized blob %s at %s', blob.get('id'), relpath);
   })
 
   .catch(Conflict, (e) => blob)
