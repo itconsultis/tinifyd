@@ -7,6 +7,12 @@ const models = require('../models');
 const Semaphore = models.Semaphore;
 const Blob = models.Blob;
 const path = require('path');
+const e = require('../exceptions');
+
+////////////////////////////////////////////////////////////////////////////
+
+const AlreadyOptimized = e.AlreadyOptimized;
+const Conflict = e.Conflict;
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -66,7 +72,7 @@ module.exports = class Optimizer extends Plugin {
     let filemode = this.get('filemode');
 
     // the filesystem watcher emits paths relative to its cwd
-    // here we are deriving absolute source and temp paths from the relative path
+    // here we are deriving absolute source and temp paths from relpath
     let abs = {
       source: this.source(relpath),
       temp: this.temp(relpath),
@@ -81,12 +87,38 @@ module.exports = class Optimizer extends Plugin {
         queue.defer((done) => {
           return blob.optimize(tinify).then((optimized_buffer) => {
             fs.writeFile(abs.temp, {mode: filemode}, optimized_buffer, (err) => {
-              err ? reject(err) : resolve();
+              err ? reject(err) : resolve(optimized_buffer);
             }); 
           })
-          .then(done).catch(done);
+          .catch(AlreadyOptimized, Conflict, (e) => {
+            log.info('%s is already optimized', relpath);
+            return blob;
+          })
+          .catch((e) => {
+            log.error(e.message);
+            log.error(e.stack);
+            return P.reject(e);
+          })
         })
       })
+    })
+
+    .then((blob) => {
+      return BlobPath.objects.create({
+        blob_id: blob.get('id'),
+        path: relpath,
+      })
+
+      .catch(Conflict, (e) => {
+        log.debug('BlobPath already exists: %s', relpath);
+      })
+
+      .catch((e) => {
+        log.error(e.message);
+        log.error(e.stack);
+        return P.reject(e);
+      })
+
     })
 
     .then(() => blob);

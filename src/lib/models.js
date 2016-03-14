@@ -13,13 +13,14 @@ const mime = require('./mime');
 const t = require('util').format;
 const moment = require('moment');
 const sql = require('./sql');
+const e = require('./exceptions');
 
 ///////////////////////////////////////////////////////////////////////////
 
-const NotImplemented = class NotImplemented extends Error {}
-const AlreadyOptimized = class AlreadyOptimized extends Error {}
-const Conflict = class Conflict extends Error {}
-const NotFound = class NotFound extends Error {}
+const NotImplemented = e.NotImplemented;
+const AlreadyOptimized = e.AlreadyOptimized;
+const Conflict = e.Conflict;
+const NotFound = e.NotFound;
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -37,6 +38,10 @@ const Manager = class Manager extends Component {
     return this.get('model');
   }
 
+  table () {
+    return this.model().prototype.table();
+  }
+
   /**
    * Return model instances that exactly match the supplied parameters
    * @param {Object} params
@@ -47,30 +52,50 @@ const Manager = class Manager extends Component {
 
     let db = this.db();
     let ModelClass = this.model();
-    let table = ModelClass.prototype.table();
+    let table = this.table();
     let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
     let conditionals = bindings.join(' AND ');
-    let selections = options.count ? 'COUNT(1)' : '*';
-    let stmt = t('SELECT %s FROM `%s` WHERE %s', selections, table, conditionals);
+    let stmt = t('SELECT * FROM `%s` WHERE %s', table, conditionals);
 
     if (options.limit) {
       stmt = t('%s %s', stmt, 'LIMIT :limit');
       params.limit = options.limit;
     }
 
-console.log(stmt);
-console.log(params);
-
     return new P((resolve, reject) => {
       return db.execute(stmt, params, (err, rows) => {
-        console.log(rows);
         err ? reject(err) : resolve(rows.map((row) => new ModelClass(row)));
       });
     });
   }
 
-  count (params) {
-    return this.filter(params, {count: true});
+  count (params, options) {
+    console.log('Manager#count()');
+
+    options = options || {};
+
+    let db = this.db();
+    let ModelClass = this.model();
+    let table = ModelClass.prototype.table();
+    let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
+    let conditionals = bindings.join(' AND ');
+    let stmt = t('SELECT COUNT(1) as `aggregate` FROM `%s` WHERE %s', table, conditionals);
+
+    if (options.limit) {
+      stmt = t('%s %s', stmt, 'LIMIT :limit');
+      params.limit = options.limit;
+    }
+
+    return new P((resolve, reject) => {
+      return db.execute(stmt, params, (err, rows) => {
+        if (err) {
+          return reject(err);
+        }
+        console.log(rows[0]);
+        console.log(rows[0].aggregate);
+        resolve(rows[0].aggregate);
+      });
+    });
   }
 
   /**
@@ -213,8 +238,6 @@ const Model = class Model extends Component {
     });
 
     let stmt = t('INSERT INTO `%s` SET %s', table, bindings.join(', '));
-    console.log(stmt);
-    console.log(params);
 
     return new P((resolve, reject) => {
       db.execute(stmt, params, (err, result) => {
@@ -224,7 +247,6 @@ const Model = class Model extends Component {
 
     .then((result) => {
       this.set(this.pk(), result.insertId);
-      console.log(this.attributes());
     })
 
     .catch((e) => {
@@ -403,8 +425,9 @@ const Blob = exports.Blob = class Blob extends Model {
   /**
    * Optimize the blob and resolve a Buffer instance that contains the raw
    * optimized image.
+   * @async
    * @param {tinify} 
-   * @return {Promise}
+   * @return {Blob}
    */
   optimize (tinify) {
     let manager = this.manager();
@@ -414,8 +437,6 @@ const Blob = exports.Blob = class Blob extends Model {
     return this.optimized()
 
     .then((optimized) => {
-      console.log(optimized);
-
       if (optimized) {
         throw new AlreadyOptimized();
       }
@@ -438,20 +459,16 @@ const Blob = exports.Blob = class Blob extends Model {
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
       this.set('hash', hash.digest(buffer));
-      return this.save().then(() => optimized_buffer);
+      return this.save().then(() => this);
     })
-
-    .catch((e) => {
-      console.log(e.message);
-      console.log(e.stack);
-      return P.reject(e);
-    });
   }
 
   optimized () {
     let sum = this.get('hash');
 
-    return this.manager().count({hash: sum}).then(Boolean);
+    return this.manager().count({hash: sum}).then((n) => {
+      return n > 0;
+    });
   }
 
   /**
@@ -529,9 +546,10 @@ const BlobPathManager = class BlobPathManager extends Model {
    * @param {String} filepath
    * @return {Promise}
    */
-  match (filepath) {
+  findByPath (filepath) {
     return this.first({hash: hash.digest(filepath)});
   }
+
 }
 
 exports.BlobPathManager = BlobPathManager;
@@ -553,6 +571,12 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
   table () {
     return 'blob_path';
   }
+
+  set path (value) {
+    this.set('hash', hash.digest(value));
+    this.attrs.path = value;
+  }
+
 }
 
 BlobPath.objects = new BlobPathManager({model: BlobPath});
