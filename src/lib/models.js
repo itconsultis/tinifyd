@@ -334,7 +334,7 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
     let db = this.db();
     let model = this.get('model').prototype;
     let table = model.table();
-    let stmt = t('DELETE FROM `%s` WHERE `created_at` >= ?', table);
+    let stmt = t('DELETE FROM `%s` WHERE `created_at` <= ?', table);
     let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
     let sqltime = sql.format.datetime(threshold);
 
