@@ -264,7 +264,6 @@ const Model = class Model extends Component {
     })
 
     .then((result) => {
-      console.log(result);
       this.set(this.pk(), result.insertId);
       return this;
     })

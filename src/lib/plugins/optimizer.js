@@ -52,9 +52,7 @@ const optimize = (tinify, blob, outpath, filemode, dirmode) => {
     }); 
   })
 
-  .catch(AlreadyOptimized, (e) => {
-    return e.blob;
-  })
+  .catch(AlreadyOptimized, (e) => e.blob)
 
   .catch((e) => {
     console.log(e.message);
@@ -64,7 +62,7 @@ const optimize = (tinify, blob, outpath, filemode, dirmode) => {
 };
 
 /**
- *
+ * 
  *
  *
  */
@@ -78,7 +76,6 @@ const record_path = (blob, relpath) => {
   return BlobPath.objects.create({blob_id: blob_id, path: relpath})
 
   .then((blob_path) => {
-    console.log(blob_path);
     console.log('optimized blob %s at %s', blob.get('id'), relpath);
   })
 
@@ -167,14 +164,14 @@ module.exports = class Optimizer extends Plugin {
             return record_path(blob, relpath);
           })
 
-          .then(() => {
+          .then((blob) => {
             resolve();
             setImmediate(done); 
           })
 
           .catch((e) => {
-            console.log(e.message);
-            console.log(e.stack);
+            log.error(e.message);
+            log.debug(e.stack);
             reject(e);
             setImmediate(() => done(e));
           });
