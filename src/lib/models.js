@@ -14,6 +14,7 @@ const t = require('util').format;
 const moment = require('moment');
 const sql = require('./sql');
 const e = require('./exceptions');
+const fs = require('fs');
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -45,7 +46,7 @@ const Manager = class Manager extends Component {
   /**
    * Return model instances that exactly match the supplied parameters
    * @param {Object} params
-   * @return {Promise}
+   * @return {Array}
    */
   filter (params, options) {
     options = options || {};
@@ -69,6 +70,13 @@ const Manager = class Manager extends Component {
     });
   }
 
+  /**
+   * Count the number of persistent models matching the given parameters
+   * @async
+   * @param {Object} params
+   * @param {Object} options
+   * @return {Number}
+   */
   count (params, options) {
     options = options || {};
 
@@ -114,12 +122,13 @@ const Manager = class Manager extends Component {
   }
 
   /**
-   * Return s model instances that exactly match the supplied parameters
+   * Return model instances that matches the given primary key
+   * @async
    * @param {Object} params
-   * @return {Promise}
+   * @return {Model}
    */
   find (id, options) {
-    let opts = _.defaults({limit: 1}, options || {});
+    let opts = _.defaults({fail: false}, options || {});
 
     let model = this.model().prototype;
     let params = {};
@@ -129,16 +138,17 @@ const Manager = class Manager extends Component {
     return this.first(params, opts);
   }
 
+  /**
+   * Create a peristent model instance having the given attributes
+   * @async
+   * @param {Object} attrs
+   * @return {Model}
+   */
   create (attrs) {
     let ModelClass = this.model();
     let model = new ModelClass(attrs || {});
 
-    return model.insert()
-
-    .then((model) => {
-      ModelClass === Blob && console.log(model.attributes());
-      return model;
-    })
+    return model.insert();
   }
 
 }
@@ -208,6 +218,7 @@ const Model = class Model extends Component {
   }
 
   /**
+   * @async
    * @param void
    * @return {Array}
    */
@@ -216,16 +227,18 @@ const Model = class Model extends Component {
   }
 
   /**
+   * @async
    * @param void
-   * @return {Promise}
+   * @return {Model}
    */
   save () {
     return this.persistent() ? this.update() : this.insert();
   }
 
   /**
+   * @async
    * @param void
-   * @return {Promise}
+   * @return {Model}
    */
   insert () {
     let db = this.db();
@@ -264,16 +277,18 @@ const Model = class Model extends Component {
   }
 
   /**
+   * @async
    * @param void
-   * @return {Promise}
+   * @return {Model}
    */
   update () {
     throw new NotImplemented();
   }
 
   /**
+   * @async
    * @param void
-   * @return {Promise}
+   * @return {}
    */
   delete () {
     let db = this.manager().db();
@@ -307,9 +322,10 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
 
   /**
    * Remove semaphores older than maxage (milliseconds)
+   * @async
    * @param {Number}   maxage
    * @param {Date}     now         - for testing
-   * @return {Promise}
+   * @return void
    */
   cleanup (maxage, now) {
     let db = this.db();
@@ -365,12 +381,23 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     };
   }
 
+  /**
+   * Return an array of JPEG and PNG file glob patterns 
+   * @param {String} source   optional source directory
+   * @return {Array}
+   */
   globs (source) {
     return _.flatten(_.map(this.get('allowed'), (exts, type) => {
       return _.map(exts, (ext) => t('%s/**/*.%s', source || '.', ext));
     }))
   }
 
+  /**
+   * Return a Blob instance representing the given image path or buffer
+   * @async
+   * @param {String} source   optional source directory
+   * @return {Blob}
+   */
   blob (arg) {
     if (arg instanceof Buffer) {
       return this.fromBuffer(arg);
@@ -378,12 +405,24 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     return this.fromFile(arg);
   }
 
+  /**
+   * Return a non-persistent Blob instance representing the given image path 
+   * @async
+   * @param {String} filepath
+   * @return {Blob}
+   */
   fromFile (filepath) {
     return readfile(filepath).then((buffer) => {
       return this.fromBuffer(buffer);  
     });
   }
 
+  /**
+   * Return a non-persistent Blob instance representing the given buffer
+   * @async
+   * @param {Buffer} buffer
+   * @return {Blob}
+   */
   fromBuffer (buffer) {
     let ModelClass = this.model();
     let allowed = this.get('allowed');
@@ -447,7 +486,7 @@ const Blob = exports.Blob = class Blob extends Model {
       if (optimized) {
         let e = new AlreadyOptimized();
         e.blob = optimized;
-console.log(optimized.attributes());
+
         throw e;
       }
     })
@@ -521,13 +560,13 @@ console.log(optimized.attributes());
   }
 
   /**
-   * Resolve a list of filesystem paths where the blob resides
-   * @param void
+   * Return a list of BlobPath objects related to the Blob
+   * @async
+   * @param {Object} options 
    * @return {Promise}
    */
   paths (options) {
-    let opts = _.defaults(options || {}, {strings: true});
-
+    let opts = _.defaults(options || {}, {strings: false});
     let params = {blob_id: this.get('id')};
 
     return this.get('paths').filter(params).then((blobpaths) => {
@@ -554,6 +593,7 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
       blob_id: null,
       hash: null,
       path: null,
+      fs: fs,
     };
   }
 
@@ -568,6 +608,23 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
   set path (value) {
     this.set('hash', hash.digest(value));
     return value;
+  }
+
+  /**
+   * Read the contents of the BlobPath into a Buffer. You need to supply
+   * the prefix argument since we are storing paths relative to the source directory
+   * @async
+   * @param {String} prefix  path prefix
+   * @return {Buffer}
+   */
+  read (prefix) {
+    let abspath = path.join(prefix, this.get('path'));
+
+    return new P((resolve, reject) => {
+      fs.readFile(abspath, 'binary', (err, buffer) => {
+        err ? reject(err) : resolve(buffer);
+      })
+    });
   }
 
 }

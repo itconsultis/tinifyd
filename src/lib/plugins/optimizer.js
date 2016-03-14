@@ -34,7 +34,7 @@ const optimize = (tinify, blob, outpath, filemode) => {
   .then((blob) => {
     let optimized_buffer = blob.get('buffer');
     return new P((resolve, reject) => {
-      fs.writeFile(outpath, {mode: filemode}, optimized_buffer, (err) => {
+      fs.writeFile(outpath, optimized_buffer, {mode: filemode, encoding: 'binary'}, (err) => {
         err ? reject(err) : resolve(blob);
       }); 
     })
@@ -51,18 +51,23 @@ const optimize = (tinify, blob, outpath, filemode) => {
   });
 };
 
-const record_path = (blob, abspath) => {
+/**
+ *
+ *
+ *
+ */
+const record_path = (blob, relpath) => {
   let blob_id = blob.get('id');
 
   if (!blob_id) {
     throw new UnexpectedValue('blob does not have an id');
   }
 
-  return BlobPath.objects.create({blob_id: blob_id, path: abspath})
+  return BlobPath.objects.create({blob_id: blob_id, path: relpath})
 
   .then((blob_path) => {
     console.log(blob_path);
-    console.log('remembered blob %s at path %s', blob.get('id'), abspath);
+    console.log('remembered blob %s at path %s', blob.get('id'), relpath);
   })
 
   .catch(Conflict, (e) => blob)
@@ -147,7 +152,7 @@ module.exports = class Optimizer extends Plugin {
           return optimize(tinify, blob, abs.temp, filemode)
 
           .then((blob) => {
-            return record_path(blob, abs.source);  
+            return record_path(blob, relpath);
           })
 
           .then(() => {

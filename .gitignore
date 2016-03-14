@@ -4,6 +4,7 @@ docker-compose.yml
 src/.env
 .env
 
+/tmp
 /logs/mysql/*
 /logs/pm2/*
 
