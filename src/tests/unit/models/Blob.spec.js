@@ -14,7 +14,7 @@ describe('models.Blob', () => {
   let hash;
   let db;
 
-  let before_each = (done) => {
+  let before = (done) => {
     let buffer = fixture('umadbro.jpg')
 
     assert(buffer instanceof Buffer);
@@ -25,15 +25,16 @@ describe('models.Blob', () => {
     done();
   };
 
-  let after_each = (done) => {
+  let after = (done) => {
     lib.models.Manager.db = null;
+    done();
   };
 
+  describe('buffer attribute access', () => {
+    beforeEach(before);
+    afterEach(after);
 
-  describe('automatic hashing behavior', () => {
-    beforeEach(before_each);
-
-    it('hash attribute updates on buffer attribute assignment', () => {
+    it('set(buffer) automatically updates the hash attribute', () => {
       let expected = new Buffer(hash.digest('binary'), 'binary');
       let actual = blob.get('hash');
 
@@ -44,7 +45,8 @@ describe('models.Blob', () => {
   });
 
   describe('#optimize', () => {
-    beforeEach(before_each);
+    beforeEach(before);
+    afterEach(after);
 
     it('resolves the same Blob', (done) => {
       let buffer;

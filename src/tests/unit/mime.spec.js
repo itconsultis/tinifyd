@@ -6,7 +6,7 @@ describe('mime', () => {
 
   describe('.type()', () => {
 
-    it('detects the mime type of a JPG image', (done) => {
+    it('correctly detects the mime type of a JPG image', (done) => {
       let input = fixture('umadbro.jpg');
       let expected = 'image/jpeg';
 
@@ -16,7 +16,7 @@ describe('mime', () => {
       })
     });
 
-    it('detects the mime type of a PNG image', (done) => {
+    it('correctly detects the mime type of a PNG image', (done) => {
       let input = fixture('umadbro.png');
       let expected = 'image/png';
 
