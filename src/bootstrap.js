@@ -54,6 +54,8 @@ module.exports = (config) => {
       },
     });
 
+    console.log(watcher);
+
     process.once('SIGTERM', () => watcher.close());
 
     return app.set('watcher', watcher);

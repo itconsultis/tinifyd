@@ -18,6 +18,7 @@ const hash = require('../hash');
 ////////////////////////////////////////////////////////////////////////////
 
 const AlreadyOptimized = e.AlreadyOptimized;
+const InvalidType = e.InvalidType;
 const Conflict = e.Conflict;
 const UnexpectedValue = e.UnexpectedValue;
 
@@ -124,11 +125,15 @@ module.exports = class Optimizer extends Plugin {
 
           .then((blob) => {
             lock && lock.delete().then(() => {
-              log.info('[rels] ' + relpath);
+              log.info('[release] ' + relpath);
             })
 
             resolve();
             setImmediate(done); 
+          })
+
+          .catch(Conflict, (e) => {
+            log.info('[lock-conflict] ' + relpath);
           })
 
           .catch((e) => {
@@ -142,6 +147,11 @@ module.exports = class Optimizer extends Plugin {
         }); // queue.defer();
       }) // new P()
     })
+
+    .catch(InvalidType, (e) => {
+      log.warn('[invalid] ' + relpath);
+    })
+
   }
 
   /**
@@ -187,7 +197,7 @@ module.exports = class Optimizer extends Plugin {
     .then((blob) => {
       return mv(temp_path, source_path, {clobber: true, mkdirp: true})
       .then(() => {
-        log.info('[ ok ] ' + relpath);
+        log.info('[changed] ' + relpath);
         return blob;
       });
     })

@@ -37,8 +37,8 @@ module.exports = {
   opt: {
     concurrency: Number(get('TINIFYD_CONCURRENCY', 64)),
     lockttl: Number(get('TINIFYD_LOCK_TIMEOUT', 300000)),
-    source: get('TINIFYD_SOURCE_PATH'),
-    temp: get('TINIFYD_TEMP_PATH', '/tmp/tinifyd'),
+    source: '/var/lib/tinifyd/images',
+    temp: '/tmp/tinifyd',
   },
 
   tinify: {
@@ -59,7 +59,7 @@ module.exports = {
 
     janitor: {
       enabled: true,
-      frequency: 900 * 1000,
+      frequency: 60 * 1000,
     },
 
     optimizer: {

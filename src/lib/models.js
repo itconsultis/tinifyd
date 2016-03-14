@@ -19,6 +19,7 @@ const fs = require('fs');
 ///////////////////////////////////////////////////////////////////////////
 
 const NotImplemented = e.NotImplemented;
+const InvalidType = e.InvalidType;
 const AlreadyOptimized = e.AlreadyOptimized;
 const Conflict = e.Conflict;
 const NotFound = e.NotFound;
@@ -272,7 +273,7 @@ const Model = class Model extends Component {
 
     .catch((e) => {
       if (e.message.match(/^Duplicate/)) {
-        throw new Conflict(e.message);
+        return P.reject(new Conflict(e.message));
       }
       throw e;
     });
@@ -433,7 +434,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
 
     return mime.type(buffer).then((type) => {
       if (!allowed.hasOwnProperty(type)) {
-        throw new Error('illegal mime type'); 
+        throw new InvalidType('invalid mime type'); 
       }
     })
 
