@@ -8,9 +8,9 @@ if (config.debug) {
   P.config({
     longStackTraces: true,
   });
-  process.on("unhandledRejection", function(reason, promise) {
-    console.log(arguments);
-  });
+  //process.on("unhandledRejection", function(reason, promise) {
+  //  console.log(arguments);
+  //});
 
   console.log(config);
 }

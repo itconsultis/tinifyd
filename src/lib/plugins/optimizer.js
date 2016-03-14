@@ -2,10 +2,12 @@
 
 const _ = require('lodash');
 const P = require('bluebird');
+const fs = require('fs');
 const Plugin = require('../daemon').Plugin;
 const models = require('../models');
 const Semaphore = models.Semaphore;
 const Blob = models.Blob;
+const BlobPath = models.BlobPath;
 const path = require('path');
 const e = require('../exceptions');
 
@@ -13,8 +15,66 @@ const e = require('../exceptions');
 
 const AlreadyOptimized = e.AlreadyOptimized;
 const Conflict = e.Conflict;
+const UnexpectedValue = e.UnexpectedValue;
 
 ////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * @param {tinify} tinify
+ * @param {models.Blob} blob
+ * @param {String} outpath     the output path of the optimized buffer
+ * @param {String} filemode    file perms
+ * @return {models.Blob}
+ */
+const optimize = (tinify, blob, outpath, filemode) => {
+
+  return blob.optimize(tinify)
+
+  .then((blob) => {
+    let optimized_buffer = blob.get('buffer');
+    return new P((resolve, reject) => {
+      fs.writeFile(outpath, {mode: filemode}, optimized_buffer, (err) => {
+        err ? reject(err) : resolve(blob);
+      }); 
+    })
+  })
+
+  .catch(AlreadyOptimized, (e) => {
+    return e.blob;
+  })
+
+  .catch((e) => {
+    console.log(e.message);
+    console.log(e.stack);
+    throw e;
+  });
+};
+
+const record_path = (blob, abspath) => {
+  let blob_id = blob.get('id');
+
+  if (!blob_id) {
+    throw new UnexpectedValue('blob does not have an id');
+  }
+
+  return BlobPath.objects.create({blob_id: blob_id, path: abspath})
+
+  .then((blob_path) => {
+    console.log(blob_path);
+    console.log('remembered blob %s at path %s', blob.get('id'), abspath);
+  })
+
+  .catch(Conflict, (e) => blob)
+
+  .catch((e) => {
+    console.log(e.message);
+    console.log(e.stack);
+    throw e;
+  });
+};
+
+
 
 module.exports = class Optimizer extends Plugin {
 
@@ -78,50 +138,32 @@ module.exports = class Optimizer extends Plugin {
       temp: this.temp(relpath),
     };
 
-    log.info('optimizing: ' + abs.source);
-
     return Blob.objects.fromFile(abs.source)
 
     .then((blob) => {
       return new P((resolve, reject) => {
         queue.defer((done) => {
-          return blob.optimize(tinify).then((optimized_buffer) => {
-            fs.writeFile(abs.temp, {mode: filemode}, optimized_buffer, (err) => {
-              err ? reject(err) : resolve(optimized_buffer);
-            }); 
+
+          return optimize(tinify, blob, abs.temp, filemode)
+
+          .then((blob) => {
+            return record_path(blob, abs.source);  
           })
-          .catch(AlreadyOptimized, Conflict, (e) => {
-            log.info('%s is already optimized', relpath);
-            return blob;
+
+          .then(() => {
+            resolve();
+            setImmediate(done); 
           })
+
           .catch((e) => {
-            log.error(e.message);
-            log.error(e.stack);
-            return P.reject(e);
-          })
+            console.log(e.message);
+            console.log(e.stack);
+            reject(e);
+            setImmediate(() => done(e));
+          });
         })
       })
     })
-
-    .then((blob) => {
-      return BlobPath.objects.create({
-        blob_id: blob.get('id'),
-        path: relpath,
-      })
-
-      .catch(Conflict, (e) => {
-        log.debug('BlobPath already exists: %s', relpath);
-      })
-
-      .catch((e) => {
-        log.error(e.message);
-        log.error(e.stack);
-        return P.reject(e);
-      })
-
-    })
-
-    .then(() => blob);
   }
 
 }

@@ -70,8 +70,6 @@ const Manager = class Manager extends Component {
   }
 
   count (params, options) {
-    console.log('Manager#count()');
-
     options = options || {};
 
     let db = this.db();
@@ -91,8 +89,6 @@ const Manager = class Manager extends Component {
         if (err) {
           return reject(err);
         }
-        console.log(rows[0]);
-        console.log(rows[0].aggregate);
         resolve(rows[0].aggregate);
       });
     });
@@ -137,7 +133,12 @@ const Manager = class Manager extends Component {
     let ModelClass = this.model();
     let model = new ModelClass(attrs || {});
 
-    return model.insert();
+    return model.insert()
+
+    .then((model) => {
+      ModelClass === Blob && console.log(model.attributes());
+      return model;
+    })
   }
 
 }
@@ -230,11 +231,15 @@ const Model = class Model extends Component {
     let db = this.db();
     let table = this.table();
     let columns = this.columns();
+    let pk = this.pk();
     let params = {};
+    let bindings = []; 
 
-    let bindings = columns.map((col) => {
-      params[col] = this.get(col); 
-      return t('`%s` = :%s', col, col);
+    columns.forEach((col) => {
+      if (col !== pk) {
+        params[col] = this.get(col); 
+        bindings.push(t('`%s` = :%s', col, col));
+      }
     });
 
     let stmt = t('INSERT INTO `%s` SET %s', table, bindings.join(', '));
@@ -246,7 +251,9 @@ const Model = class Model extends Component {
     })
 
     .then((result) => {
+      console.log(result);
       this.set(this.pk(), result.insertId);
+      return this;
     })
 
     .catch((e) => {
@@ -272,7 +279,7 @@ const Model = class Model extends Component {
     let db = this.manager().db();
     let table = this.table();
     let pk = this.pk();
-    let stmt = t('DELETE * FROM `%s` WHERE `%s` = :%s', table, pk, pk);
+    let stmt = t('DELETE FROM `%s` WHERE `%s` = :%s', table, pk, pk);
     let bindings = {};
 
     bindings[this.pk()] = this.get(this.pk());
@@ -438,7 +445,10 @@ const Blob = exports.Blob = class Blob extends Model {
 
     .then((optimized) => {
       if (optimized) {
-        throw new AlreadyOptimized();
+        let e = new AlreadyOptimized();
+        e.blob = optimized;
+console.log(optimized.attributes());
+        throw e;
       }
     })
 
@@ -459,15 +469,18 @@ const Blob = exports.Blob = class Blob extends Model {
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
       this.set('hash', hash.digest(buffer));
-      return this.save().then(() => this);
+
+      return this.save().then(() => {
+        return this;
+      });
     })
   }
 
   optimized () {
     let sum = this.get('hash');
 
-    return this.manager().count({hash: sum}).then((n) => {
-      return n > 0;
+    return this.manager().first({hash: sum}).then((model) => {
+      return model; 
     });
   }
 
@@ -533,31 +546,11 @@ exports.Blob = Blob;
 
 ///////////////////////////////////////////////////////////////////////////
 
-const BlobPathManager = class BlobPathManager extends Model {
-
-  defaults () {
-    return {
-      model: BlobPath,
-    }
-  }
-
-  /**
-   * Return a single BlobPath matching the given filepath
-   * @param {String} filepath
-   * @return {Promise}
-   */
-  findByPath (filepath) {
-    return this.first({hash: hash.digest(filepath)});
-  }
-
-}
-
-exports.BlobPathManager = BlobPathManager;
-
 const BlobPath = exports.BlobPath = class BlobPath extends Model {
 
   defaults () {
     return {
+      id: null,
       blob_id: null,
       hash: null,
       path: null,
@@ -574,12 +567,12 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
 
   set path (value) {
     this.set('hash', hash.digest(value));
-    this.attrs.path = value;
+    return value;
   }
 
 }
 
-BlobPath.objects = new BlobPathManager({model: BlobPath});
+BlobPath.objects = new Manager({model: BlobPath});
 
 exports.BlobPath = BlobPath;
 
