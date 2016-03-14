@@ -20,9 +20,7 @@ CREATE TABLE `blob_path` (
 
 CREATE TABLE `semaphore` (
   `id` BINARY(20) NOT NULL,
-  `key` varchar(255) CHARACTER SET latin1 NOT NULL,
   `created_at` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  KEY `semaphore_idx_1` (`created_at`)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
