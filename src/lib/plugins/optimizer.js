@@ -22,19 +22,41 @@ const UnexpectedValue = e.UnexpectedValue;
 ////////////////////////////////////////////////////////////////////////////
 
 
+const derive_temp_path = (tempdir, blob) => {
+  let hexsum = blob.get('hash').toString('hex');
+  console.log(hexsum);
+
+  let subdir = hexsum.slice(0, 2);
+  let filepath = path.join(tempdir, subdir, hexsum);
+
+  return filepath;
+};
+
+
 /**
  * @param {tinify} tinify
  * @param {models.Blob} blob
- * @param {String} temp_path     the output path of the optimized buffer
+ * @param {String} tempdir     the output path of the optimized buffer
  * @param {String} filemode    file perms
  * @return {models.Blob}
  */
-const optimize = (tinify, blob, temp_path, source_path, filemode, dirmode) => {
+const optimize = (tinify, blob, tempdir, source_path, filemode, dirmode) => {
   filemode = filemode || '0644';
   dirmode = dirmode || '0755';
 
+  let temp_path = derive_temp_path(tempdir, blob);
+
+  // scaffold out the target temp directory
+  return new P((resolve, reject) => {
+    mkdirp(path.dirname(temp_path), (err) => {
+      err ? reject(err) : resolve(); 
+    })
+  })
+
   // optimize the image with tinify
-  return blob.optimize(tinify)
+  .then(() => {
+    return blob.optimize(tinify)
+  })
 
   // write the optimized image buffer to the temp path
   .then((blob) => {
@@ -47,7 +69,7 @@ const optimize = (tinify, blob, temp_path, source_path, filemode, dirmode) => {
     }); 
   })
 
-  // move the optimized image to the original source path
+  // move the optimized image from the temp path to the original source path
   .then((blob) => {
     return new P((resolve, reject) => {
       mv(temp_path, source_path, {clobber: true, mkdirp: true}, (err) => {
@@ -150,7 +172,7 @@ module.exports = class Optimizer extends Plugin {
     // here we are deriving absolute source and temp paths from relpath
     let abs = {
       source: this.source(relpath),
-      temp: this.temp(relpath),
+      tempdir: this.temp('blobs'),
     };
 
     return Blob.objects.fromFile(abs.source)
@@ -159,7 +181,7 @@ module.exports = class Optimizer extends Plugin {
       return new P((resolve, reject) => {
         queue.defer((done) => {
 
-          return optimize(tinify, blob, abs.temp, abs.source, filemode, dirmode)
+          return optimize(tinify, blob, abs.tempdir, abs.source, filemode, dirmode)
 
           .then((blob) => {
             return record_path(blob, relpath);
