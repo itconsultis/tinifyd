@@ -11,6 +11,7 @@ const BlobPath = models.BlobPath;
 const path = require('path');
 const e = require('../exceptions');
 const mkdirp = require('mkdirp');
+const mv = require('mv');
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -24,32 +25,35 @@ const UnexpectedValue = e.UnexpectedValue;
 /**
  * @param {tinify} tinify
  * @param {models.Blob} blob
- * @param {String} outpath     the output path of the optimized buffer
+ * @param {String} temp_path     the output path of the optimized buffer
  * @param {String} filemode    file perms
  * @return {models.Blob}
  */
-const optimize = (tinify, blob, outpath, filemode, dirmode) => {
+const optimize = (tinify, blob, temp_path, source_path, filemode, dirmode) => {
   filemode = filemode || '0644';
   dirmode = dirmode || '0755';
 
+  // optimize the image with tinify
   return blob.optimize(tinify)
 
+  // write the optimized image buffer to the temp path
   .then((blob) => {
     let optimized_buffer = blob.get('buffer');
 
     return new P((resolve, reject) => {
-      mkdirp(path.dirname(outpath), {mode: dirmode}, (err) => {
-        err ? reject(err) : resolve(optimized_buffer);
-      })
-    });
-  })
-
-  .then((optimized_buffer) => {
-    return new P((resolve, reject) => {
-      fs.writeFile(outpath, optimized_buffer, {mode: filemode, encoding: 'binary'}, (err) => {
+      fs.writeFile(temp_path, optimized_buffer, {mode: filemode, encoding: 'binary'}, (err) => {
         err ? reject(err) : resolve(blob);
       });
     }); 
+  })
+
+  // move the optimized image to the original source path
+  .then((blob) => {
+    return new P((resolve, reject) => {
+      mv(temp_path, source_path, {clobber: true, mkdirp: true}, (err) => {
+        err ? reject(err) : resolve(blob);
+      })
+    });
   })
 
   .catch(AlreadyOptimized, (e) => e.blob)
@@ -74,10 +78,6 @@ const record_path = (blob, relpath) => {
   }
 
   return BlobPath.objects.create({blob_id: blob_id, path: relpath})
-
-  .then((blob_path) => {
-    console.log('optimized blob %s at %s', blob.get('id'), relpath);
-  })
 
   .catch(Conflict, (e) => blob)
 
@@ -144,6 +144,7 @@ module.exports = class Optimizer extends Plugin {
     let log = this.app('log');
     let tinify = this.app('tinify');
     let filemode = this.get('filemode');
+    let dirmode = this.get('dirmode');
 
     // the filesystem watcher emits paths relative to its cwd
     // here we are deriving absolute source and temp paths from relpath
@@ -158,13 +159,14 @@ module.exports = class Optimizer extends Plugin {
       return new P((resolve, reject) => {
         queue.defer((done) => {
 
-          return optimize(tinify, blob, abs.temp, filemode)
+          return optimize(tinify, blob, abs.temp, abs.source, filemode, dirmode)
 
           .then((blob) => {
             return record_path(blob, relpath);
           })
 
           .then((blob) => {
+            log.info('optimized ' + relpath);
             resolve();
             setImmediate(done); 
           })
