@@ -187,7 +187,7 @@ module.exports = class Optimizer extends Plugin {
     .then((blob) => {
       return mv(temp_path, source_path, {clobber: true, mkdirp: true})
       .then(() => {
-        log.info('[chgd] ' + relpath);
+        log.info('[ ok ] ' + relpath);
         return blob;
       });
     })
