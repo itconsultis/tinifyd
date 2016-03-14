@@ -9,7 +9,7 @@
 const slug = exports.slug = (value) => {
   return String(value)
     .trim()                         // strip leading and trailing whitespace
-    .toLowerCase()
+    .toLowerCase()                  // convert to lowercase
     .replace(/\s+/g, '-')           // replace spaces with -
     .replace(/[^\w\-]+/g, '')       // remove all non-word chars
     .replace(/\-\-+/g, '-')         // replace multiple - with single -

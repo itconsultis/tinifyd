@@ -53,9 +53,9 @@ module.exports = class Optimizer extends Plugin {
     return Blob.objects.glob(this.source())
 
     .then((filepaths) => {
-      return filepaths.reduce((promise, filepath) => {
-        return promise.then(() => this.one(filepath))
-      }, P.resolve());
+      return P.all(filepaths.map((filepath) => {
+        return this.one(filepath); 
+      }));
     })
   }
 
@@ -63,7 +63,7 @@ module.exports = class Optimizer extends Plugin {
     let queue = this.get('queue');
     let log = this.app('log');
     let tinify = this.app('tinify');
-    let config = this.app('config')
+    let filemode = this.get('filemode');
 
     // the filesystem watcher emits paths relative to its cwd
     // here we are deriving absolute source and temp paths from the relative path
@@ -78,30 +78,18 @@ module.exports = class Optimizer extends Plugin {
 
     .then((blob) => {
       return new P((resolve, reject) => {
-
         queue.defer((done) => {
-          log.info('optimizing ' + relpath);
-
           return blob.optimize(tinify).then((optimized_buffer) => {
-            fs.writeFile(abs.temp, optimized_buffer, (err) => {
-              log.info('optimized ' + relpath); 
-              done(err);
-            });
+            fs.writeFile(abs.temp, {mode: filemode}, optimized_buffer, (err) => {
+              err ? reject(err) : resolve();
+            }); 
           })
-          .catch(done);
+          .then(done).catch(done);
         })
       })
     })
 
-    .then(() => {
-      log.debug('[ok] ' + filepath);
-    })
-
-    .catch((e) => {
-      log.error(e.message);
-      log.error(e.stack);
-    })
-
+    .then(() => blob);
   }
 
 }

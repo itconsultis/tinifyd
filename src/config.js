@@ -60,6 +60,7 @@ module.exports = {
 
     optimizer: {
       enabled: true,
+      filemode: '0644',
     }
 
   },

@@ -19,6 +19,7 @@ const sql = require('./sql');
 const NotImplemented = class NotImplemented extends Error {}
 const AlreadyOptimized = class AlreadyOptimized extends Error {}
 const Conflict = class Conflict extends Error {}
+const NotFound = class NotFound extends Error {}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -32,6 +33,10 @@ const Manager = class Manager extends Component {
     return this.get('db') || Manager.db;
   }
 
+  model () {
+    return this.get('model');
+  }
+
   /**
    * Return model instances that exactly match the supplied parameters
    * @param {Object} params
@@ -41,26 +46,31 @@ const Manager = class Manager extends Component {
     options = options || {};
 
     let db = this.db();
-    let model = this.get('model').prototype;
-    let table = model.table();
+    let ModelClass = this.model();
+    let table = ModelClass.prototype.table();
     let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
     let conditionals = bindings.join(' AND ');
-    let stmt = t('SELECT * FROM `%s` WHERE %s', table, conditionals);
+    let selections = options.count ? 'COUNT(1)' : '*';
+    let stmt = t('SELECT %s FROM `%s` WHERE %s', selections, table, conditionals);
 
     if (options.limit) {
-      stmt += ' LIMIT :limit ';
-      bindings.limit = limit;
+      stmt = t('%s %s', stmt, 'LIMIT :limit');
+      params.limit = options.limit;
     }
 
-    console.log('%s <= %s', stmt, bindings);
+console.log(stmt);
+console.log(params);
 
     return new P((resolve, reject) => {
       return db.execute(stmt, params, (err, rows) => {
-        err ? reject(err) : resolve(_.map(rows, (row) => {
-          return new model(row);
-        }));
+        console.log(rows);
+        err ? reject(err) : resolve(rows.map((row) => new ModelClass(row)));
       });
     });
+  }
+
+  count (params) {
+    return this.filter(params, {count: true});
   }
 
   /**
@@ -72,10 +82,10 @@ const Manager = class Manager extends Component {
     let opts = _.defaults({limit: 1}, options || {});
 
     return this.filter(params, opts).then((models) => {
-      let model = models.shift();
+      let model = models.shift() || null;
 
       if (!model && opts.fail) {
-        throw new Error('model not found');
+        throw new NotFound();
       }
 
       return model;
@@ -90,7 +100,7 @@ const Manager = class Manager extends Component {
   find (id, options) {
     let opts = _.defaults({limit: 1}, options || {});
 
-    let model = this.get('model').prototype;
+    let model = this.model().prototype;
     let params = {};
 
     params[model.pk()] = id;
@@ -99,10 +109,10 @@ const Manager = class Manager extends Component {
   }
 
   create (attrs) {
-    let Model = this.get('model');
-    let model = new Model(params);
+    let ModelClass = this.model();
+    let model = new ModelClass(attrs || {});
 
-    return model.save();
+    return model.insert();
   }
 
 }
@@ -131,7 +141,7 @@ const Model = class Model extends Component {
    * @return {mysql2.Connection}
    */
   db () {
-    return this.manager().db;
+    return this.manager().db();
   }
 
   /**
@@ -153,13 +163,13 @@ const Model = class Model extends Component {
   }
 
   /**
-   * Return a list that identifies *non-primary-key* attributes that
-   * have matching columns in the database table
+   * Return a list that identifies attributes that have a matching
+   * column in the database table
    * @param void
    * @return {Array}
    */
-  persistent () {
-    return [];
+  columns () {
+    return [this.pk()];
   }
 
   /**
@@ -167,8 +177,16 @@ const Model = class Model extends Component {
    * @param void
    * @return {Boolean}
    */
-  durable () {
+  persistent () {
     return Boolean(this.get(this.pk()));
+  }
+
+  /**
+   * @param void
+   * @return {Array}
+   */
+  dirty () {
+    throw new NotImplemented();
   }
 
   /**
@@ -176,7 +194,7 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   save () {
-    return this.durable() ? this.update() : this.insert();
+    return this.persistent() ? this.update() : this.insert();
   }
 
   /**
@@ -184,11 +202,35 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   insert () {
+    let db = this.db();
     let table = this.table();
-    let bindings = {};
+    let columns = this.columns();
+    let params = {};
 
-    _.each(this.persistent(), (attr) => {
-      bindings[attr] = this.get(attr);
+    let bindings = columns.map((col) => {
+      params[col] = this.get(col); 
+      return t('`%s` = :%s', col, col);
+    });
+
+    let stmt = t('INSERT INTO `%s` SET %s', table, bindings.join(', '));
+    console.log(stmt);
+    console.log(params);
+
+    return new P((resolve, reject) => {
+      db.execute(stmt, params, (err, result) => {
+        err ? reject(err) : resolve(result);
+      });
+    })
+
+    .then((result) => {
+      this.set(this.pk(), result.insertId);
+      console.log(this.attributes());
+    })
+
+    .catch((e) => {
+      if (e.message.match(/duplicate/i)) {
+        throw new Conflict();
+      }
     });
   }
 
@@ -197,7 +239,7 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   update () {
-    return P.reject();
+    throw new NotImplemented();
   }
 
   /**
@@ -205,7 +247,19 @@ const Model = class Model extends Component {
    * @return {Promise}
    */
   delete () {
-    return P.reject();
+    let db = this.manager().db();
+    let table = this.table();
+    let pk = this.pk();
+    let stmt = t('DELETE * FROM `%s` WHERE `%s` = :%s', table, pk, pk);
+    let bindings = {};
+
+    bindings[this.pk()] = this.get(this.pk());
+
+    return new P((resolve, reject) => {
+      db.execute(stmt, bindings, (err) => {
+        err ? reject(err) : resolve();
+      });
+    });
   }
 
 }
@@ -246,19 +300,13 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
 
 const Semaphore = class Semaphore extends Model {
 
-  persistent () {
-    return [
-      'key',
-    ];
-  }
-
   table () {
     return 'semaphore';
   }
 
   defaults () {
     return {
-      key: null,
+      id: null,
     };
   }
 
@@ -269,7 +317,7 @@ const Semaphore = class Semaphore extends Model {
 
 }
 
-Semaphore.objects = new SemaphoreManager();
+Semaphore.objects = new SemaphoreManager({model: Semaphore});
 
 exports.Semaphore = Semaphore;
 
@@ -308,7 +356,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
   }
 
   fromBuffer (buffer) {
-    let Model = this.get('model');
+    let ModelClass = this.model();
     let allowed = this.get('allowed');
     let mime = this.get('mime');
     let sum = hash.digest(buffer);
@@ -320,7 +368,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     })
 
     .then(() => {
-      return new Model({
+      return new ModelClass({
         hash: hash.digest(buffer),
         buffer: buffer,
       });
@@ -334,8 +382,8 @@ exports.BlobManager = BlobManager;
 
 const Blob = exports.Blob = class Blob extends Model {
 
-  persistent () {
-    return ['id', 'hash'];
+  columns () {
+    return [this.pk(), 'hash'];
   }
 
   defaults () {
@@ -343,12 +391,21 @@ const Blob = exports.Blob = class Blob extends Model {
       id: null,
       hash: null,
       buffer: null,
-      optimized: false,
       semaphores: Semaphore.objects,
       paths: BlobPath.objects,
     };
   }
 
+  table () {
+    return 'blob';
+  }
+
+  /**
+   * Optimize the blob and resolve a Buffer instance that contains the raw
+   * optimized image.
+   * @param {tinify} 
+   * @return {Promise}
+   */
   optimize (tinify) {
     let manager = this.manager();
     let buffer = this.get('buffer');
@@ -357,6 +414,8 @@ const Blob = exports.Blob = class Blob extends Model {
     return this.optimized()
 
     .then((optimized) => {
+      console.log(optimized);
+
       if (optimized) {
         throw new AlreadyOptimized();
       }
@@ -366,8 +425,8 @@ const Blob = exports.Blob = class Blob extends Model {
 
     .then(() => {
       return new P((resolve, reject) => {
-        tinify.fromBuffer(buffer).toBuffer((err, result) => {
-          err ? reject(err) : resolve(result);
+        tinify.fromBuffer(buffer).toBuffer((err, optimized_buffer) => {
+          err ? reject(err) : resolve(optimized_buffer);
         });
       })
     })
@@ -379,55 +438,71 @@ const Blob = exports.Blob = class Blob extends Model {
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
       this.set('hash', hash.digest(buffer));
-      return this.save();
+      return this.save().then(() => optimized_buffer);
     })
+
+    .catch((e) => {
+      console.log(e.message);
+      console.log(e.stack);
+      return P.reject(e);
+    });
   }
 
   optimized () {
-    let manager = this.manager();
     let sum = this.get('hash');
 
-    return manager.first({hash: sum}).then((models) => models.length > 0);
+    return this.manager().count({hash: sum}).then(Boolean);
   }
 
+  /**
+   * Resolve a Boolean that indicates whether or not the blob is locked
+   * @param void
+   * @return {Promise}
+   */
   locked () {
-    return P.resolve();
+    return P.resolve(Boolean(this._lock));
   }
 
   /**
    * Insert a row into the semaphore table. A rejection error means the blob
-   * already in the process of being optimized.
+   * is already locked.
    * @param void
    * @return {Promise}
    */
   lock () {
     let sum = this.get('hash');
 
-    return Semaphore.objects.create({hash: sum})
+    return this.get('semaphores').create({id: sum})
+
+    .then((semaphore) => {
+      this._lock = semaphore; 
+    })
 
     .catch((e) => {
-      throw new Conflict('lock conflict on blob ' + sum);
+      if (e.message.match(/Duplicate/)) {
+        throw new Conflict('lock conflict on blob ' + sum);
+      }
+      throw e;
     })
   }
 
   unlock () {
-    return P.resolve();
+    return this._lock ? this._lock.delete() : P.resolve();
   }
 
   /**
-   * Resolve a Set containing filesystem paths where the blob resides
+   * Resolve a list of filesystem paths where the blob resides
    * @param void
    * @return {Promise}
    */
   paths (options) {
     let opts = _.defaults(options || {}, {strings: true});
 
-    let manager = this.get('paths');
     let params = {blob_id: this.get('id')};
 
-    return manager.filter(params).then((blobpaths) => {
+    return this.get('paths').filter(params).then((blobpaths) => {
       if (opts.strings) {
-        return _.map(blobpaths, (blobpath) => blobpath.get('path'));
+        return blobpaths.map((blobpath) => blobpath.get('path'));
       }
       return blobpaths;
     });
@@ -435,7 +510,7 @@ const Blob = exports.Blob = class Blob extends Model {
 
 }
 
-Blob.objects = new BlobManager();
+Blob.objects = new BlobManager({model: Blob});
 
 exports.Blob = Blob;
 
@@ -471,8 +546,8 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
     };
   }
 
-  persistent () {
-    return ['blob_id', 'hash', 'path'];
+  columns () {
+    return [this.pk(), 'blob_id', 'hash', 'path'];
   }
 
   table () {

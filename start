@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -xaeu -o pipefail
+set -aeu -o pipefail
 
 if [ ! -f ./src/.env ]; then
     cp ./src/.env.example ./src/.env
@@ -20,9 +20,10 @@ STORAGE_CONTAINER=${PROJECT}_storage
 
 # wait for mysql server to start accepting queries
 init_mysql () {
+    docker exec -u root $DB_CONTAINER bash -c "chown -R mysql: /var/log/mysql"
+
     echo "Waiting for MySQL server to start accepting queries..."
-    while [ 0 ];
-    do
+    while [ 0 ]; do
         cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"'"
         result=$(docker exec $DB_CONTAINER bash -c "$cmd" || true)
         sleep 2
@@ -32,10 +33,11 @@ init_mysql () {
         fi
     done
 
-    #if [ "$ENVIRONMENT" == "local" ]; then
-    #    docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e 'SET GLOBAL general_log = 1' "
-    #    docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e 'SET GLOBAL general_log_file = \"/dev/stdout\"'"
-    #fi
+    if [ "$ENVIRONMENT" == "local" ]; then
+        docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log = 1\"";
+        docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log_file = '/var/log/mysql/mysql.log'\"";
+        docker exec $DB_CONTAINER bash -c "mysql -u root -p${TINIFYD_DB_PASS} -e \"SET GLOBAL general_log = 1\"";
+    fi
 }
 
 

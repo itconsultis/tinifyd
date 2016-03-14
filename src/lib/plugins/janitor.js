@@ -30,8 +30,6 @@ module.exports = class Janitor extends Plugin {
     let config = this.app('config');
     let log = this.app('log');
 
-    log.info('cleaning up stale locks');
-
     return Semaphore.objects.cleanup(config.opt.lockttl)
 
     .then((result) => {

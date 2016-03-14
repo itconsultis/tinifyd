@@ -2,7 +2,6 @@
 
 const _ = require('lodash');
 const P = require('bluebird');
-const config = require('./config');
 const EventEmitter = require('events').EventEmitter;
 const Container = require('./lib/foundation').Container;
 const tinify = require('tinify');
@@ -17,7 +16,7 @@ const winston = require('winston');
 
 ///////////////////////////////////////////////////////////////////////////
 
-module.exports = () => {
+module.exports = (config) => {
 
   let app = new Container();
 

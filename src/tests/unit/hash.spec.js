@@ -3,33 +3,29 @@
 const hash = lib.hash;
 const crypto = require('crypto');
 
+const create_hash = (input, encoding) => {
+  encoding = encoding || 'binary';
+
+  let h = crypto.createHash('sha1');
+  h.update(input);
+
+  return new Buffer(h.digest(encoding), encoding);
+};
+
 describe('hash', () => {
 
   describe('.digest()', () => {
 
     it('generates a SHA-1 binary digest at arity 1', () => {
       let input = 'hello world';
-      let h = crypto.createHash('sha1');
+      let expected = create_hash(input);
+      let actual = hash.digest(input);
 
-      h.update(input);
-
-      let expected = h.digest('binary');
-      let actual = hash.digest('hello world');
-
-      expect(actual).to.equal(expected);
+      expect(actual).to.be.an.instanceof(Buffer);
+      expect(Buffer.compare(expected, actual)).to.equal(0);
     });
 
-    it('generates a different kind of binary digest at arity 2', () => {
-      let input = 'hello world';
-      let h = crypto.createHash('md5');
-
-      h.update(input);
-
-      let expected = h.digest('binary');
-      let actual = hash.digest('hello world', 'md5');
-
-      expect(actual).to.equal(expected);
-    });
   });
+
 });
 
