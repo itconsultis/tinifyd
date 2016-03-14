@@ -13,6 +13,7 @@ const t = require('util').format;
 const dummy = require('./lib/dummy');
 const d3 = require('d3-queue');
 const winston = require('winston');
+const tinifyapi = require('tinify');
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -54,8 +55,6 @@ module.exports = (config) => {
       },
     });
 
-    console.log(watcher);
-
     process.once('SIGTERM', () => watcher.close());
 
     return app.set('watcher', watcher);
@@ -85,9 +84,14 @@ module.exports = (config) => {
   /////////////////////////////////////////////////////////////////////////
 
   .then(() => {
-    app.get('log').info('initializing tinify (dummy)');
+    app.get('log').info('initializing tinify');
 
-    let tinify = dummy.tinify;
+    let tinify = tinifyapi;
+
+    if (config.tinify.dummy) {
+      tinify = dummy.tinify;
+      app.get('log').info(' using dummy tinify client');
+    }
 
     tinify.key = config.tinify.key;
 

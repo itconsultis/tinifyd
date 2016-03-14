@@ -42,6 +42,7 @@ module.exports = {
   },
 
   tinify: {
+    dummy: Boolean(get('TINIFYD_API_DUMMY', 0)),
     host: get('TINIFYD_API_HOST', 'api.tinify.com'),
     key: get('TINIFYD_API_KEY', '--secure--'),
   },
