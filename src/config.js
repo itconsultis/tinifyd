@@ -61,6 +61,7 @@ module.exports = {
     optimizer: {
       enabled: true,
       filemode: '0644',
+      dirmode: '0755',
     }
 
   },
