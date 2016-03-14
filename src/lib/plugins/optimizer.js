@@ -114,7 +114,7 @@ module.exports = class Optimizer extends Plugin {
           return Semaphore.objects.create({id: pathsum})
 
           .then((semaphore) => {
-            log.info('[lock] ' + relpath);
+            log.info('[LOCK] ' + relpath);
             lock = semaphore;
             return this.optimize(blob, relpath)
           })
@@ -125,7 +125,7 @@ module.exports = class Optimizer extends Plugin {
 
           .then((blob) => {
             lock && lock.delete().then(() => {
-              log.info('[release] ' + relpath);
+              log.info('[RELEASE] ' + relpath);
             })
 
             resolve();
@@ -133,7 +133,7 @@ module.exports = class Optimizer extends Plugin {
           })
 
           .catch(Conflict, (e) => {
-            log.info('[lock-conflict] ' + relpath);
+            log.warn('[RACE] ' + relpath);
           })
 
           .catch((e) => {
@@ -149,7 +149,7 @@ module.exports = class Optimizer extends Plugin {
     })
 
     .catch(InvalidType, (e) => {
-      log.warn('[invalid] ' + relpath);
+      log.warn('[INVALID] ' + relpath);
     })
 
   }
@@ -197,7 +197,7 @@ module.exports = class Optimizer extends Plugin {
     .then((blob) => {
       return mv(temp_path, source_path, {clobber: true, mkdirp: true})
       .then(() => {
-        log.info('[changed] ' + relpath);
+        log.info('[CHANGED] ' + relpath);
         return blob;
       });
     })
@@ -207,7 +207,7 @@ module.exports = class Optimizer extends Plugin {
     })
 
     .catch(AlreadyOptimized, (e) => {
-      log.info('[skip] ' + relpath);
+      log.info('[SKIP] ' + relpath);
       return e.blob;
     })
 
