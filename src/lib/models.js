@@ -178,7 +178,7 @@ const Model = class Model extends Component {
    * @return {mysql2.Connection}
    */
   db () {
-    return this.manager().db();
+    return this.get('db') || this.manager().db();
   }
 
   /**
@@ -377,6 +377,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     return {
       model: Blob,
       mime: mime,
+      hasher: hash,
       allowed: {
         'image/jpeg': ['jpeg', 'jpg'],
         'image/png': ['png'],
@@ -430,7 +431,6 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     let ModelClass = this.model();
     let allowed = this.get('allowed');
     let mime = this.get('mime');
-    let sum = hash.digest(buffer);
 
     return mime.type(buffer).then((type) => {
       if (!allowed.hasOwnProperty(type)) {
@@ -439,10 +439,7 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
     })
 
     .then(() => {
-      return new ModelClass({
-        hash: hash.digest(buffer),
-        buffer: buffer,
-      });
+      return new ModelClass({buffer: buffer});
     })
   }
 
@@ -468,6 +465,20 @@ const Blob = exports.Blob = class Blob extends Model {
 
   table () {
     return 'blob';
+  }
+
+  set buffer (value) {
+    let kosher = value instanceof Buffer;
+
+    if (!kosher) {
+      throw new InvalidType('expected Buffer instance');
+    }
+   
+    let hasher = this.manager().get('hasher');
+     
+    this.set('hash', hasher.digest(value));
+
+    return value;
   }
 
   /**
