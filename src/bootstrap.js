@@ -43,17 +43,18 @@ module.exports = (config) => {
 
   .then(() => {
     app.get('log').info('initializing watcher');
-
+ 
     let watcher = chokidar.watch(models.Blob.objects.globs(), {
       cwd: config.opt.source,
       persistent: true,
+      followSymlinks: false,
       awaitWriteFinish: {
         stabilityThreshold: 15000,
         pollInterval: 100,
       },
     });
 
-    process.on('SIGTERM', () => watcher.close());
+    process.once('SIGTERM', () => watcher.close());
 
     return app.set('watcher', watcher);
   })
@@ -72,7 +73,7 @@ module.exports = (config) => {
 
       return new P((resolve, reject) => {
         db.connect((err) => {
-          process.once('SIGTERM', () => {db.end()});
+          process.once('SIGTERM', () => db.end());
           err ? reject(err) : resolve(db); 
         });
       });

@@ -461,7 +461,6 @@ const Blob = exports.Blob = class Blob extends Model {
       id: null,
       hash: null,
       buffer: null,
-      semaphores: Semaphore.objects,
       paths: BlobPath.objects,
     };
   }
@@ -505,9 +504,7 @@ const Blob = exports.Blob = class Blob extends Model {
       this.set('buffer', buffer);
       this.set('hash', hash.digest(buffer));
 
-      return this.save().then(() => {
-        return this;
-      });
+      return this.save().then(() => this);
     })
   }
 

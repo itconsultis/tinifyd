@@ -16,8 +16,17 @@ describe('hash', () => {
 
   describe('.digest()', () => {
 
-    it('generates a SHA-1 binary digest at arity 1', () => {
+    it('generates a SHA-1 binary digest of a String at arity 1', () => {
       let input = 'hello world';
+      let expected = create_hash(input);
+      let actual = hash.digest(input);
+
+      expect(actual).to.be.an.instanceof(Buffer);
+      expect(Buffer.compare(expected, actual)).to.equal(0);
+    });
+
+    it('generates a SHA-1 binary digest of a Buffer at arity 1', () => {
+      let input = new Buffer('hello world');
       let expected = create_hash(input);
       let actual = hash.digest(input);
 

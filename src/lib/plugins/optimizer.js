@@ -13,6 +13,7 @@ const e = require('../exceptions');
 const mkdirp = P.promisify(require('mkdirp'));
 const mv = P.promisify(require('mv'));
 const write = P.promisify(fs.writeFile);
+const hash = require('../hash');
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -99,20 +100,20 @@ module.exports = class Optimizer extends Plugin {
   one (relpath) {
     let queue = this.get('queue');
     let log = this.app('log');
-    let lock;
 
     return Blob.objects.fromFile(this.source(relpath))
 
     .then((blob) => {
       return new P((resolve, reject) => {
         queue.defer((done) => {
+          let pathsum = hash.digest(relpath);
+          let lock;
 
-          log.info('[lock] ' + relpath);
-
-          // acquire a lock on the unoptimized blob
-          return Semaphore.objects.create({id: blob.get('hash')})
+          // acquire a lock on the blob path
+          return Semaphore.objects.create({id: pathsum})
 
           .then((semaphore) => {
+            log.info('[lock] ' + relpath);
             lock = semaphore;
             return this.optimize(blob, relpath)
           })
@@ -122,8 +123,10 @@ module.exports = class Optimizer extends Plugin {
           })
 
           .then((blob) => {
-            log.info('[rels] ' + relpath);
-            lock && lock.delete();
+            lock && lock.delete().then(() => {
+              log.info('[rels] ' + relpath);
+            })
+
             resolve();
             setImmediate(done); 
           })
@@ -135,8 +138,9 @@ module.exports = class Optimizer extends Plugin {
             reject(e);
             setImmediate(() => done(e));
           });
-        })
-      })
+
+        }); // queue.defer();
+      }) // new P()
     })
   }
 
@@ -189,7 +193,7 @@ module.exports = class Optimizer extends Plugin {
     })
 
     .catch(Conflict, (e) => {
-      return blob;
+      return Blob.objects.first({hash: blob.get('hash')})
     })
 
     .catch(AlreadyOptimized, (e) => {

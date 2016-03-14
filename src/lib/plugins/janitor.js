@@ -7,14 +7,13 @@ const Semaphore = require('../models').Semaphore;
 
 ////////////////////////////////////////////////////////////////////////////
 
-const EVERY_MINUTE = 60 * 1000;
-const EVERY_HOUR = 3600 * 1000;
+const ONE_MINUTE = 60 * 1000;
 
 module.exports = class Janitor extends Plugin {
 
   up () {
     let iterate = () => this.iterate();
-    this.interval = setInterval(iterate, EVERY_MINUTE);
+    this.interval = setInterval(iterate, this.get('frequency') || ONE_MINUTE);
 
     setImmediate(iterate);
 
