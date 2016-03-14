@@ -30,6 +30,10 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')
 module.exports = {
   debug: Boolean(get('TINIFYD_DEBUG', false)),
 
+  log: {
+    level: get('TINIFYD_LOG_LEVEL', 'info'),
+  },
+
   opt: {
     concurrency: Number(get('TINIFYD_CONCURRENCY', 64)),
     lockttl: Number(get('TINIFYD_LOCK_TIMEOUT', 300000)),
@@ -55,7 +59,7 @@ module.exports = {
 
     janitor: {
       enabled: true,
-      frequency: 60 * 1000,
+      frequency: 900 * 1000,
     },
 
     optimizer: {

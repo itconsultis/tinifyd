@@ -249,11 +249,13 @@ const Model = class Model extends Component {
     let bindings = []; 
 
     columns.forEach((col) => {
-      if (col !== pk) {
-        params[col] = this.get(col); 
-        bindings.push(t('`%s` = :%s', col, col));
-      }
+      params[col] = this.get(col); 
+      bindings.push(t('`%s` = :%s', col, col));
     });
+
+    if (!params[pk]) {
+      params[pk] = null;
+    }
 
     let stmt = t('INSERT INTO `%s` SET %s', table, bindings.join(', '));
 
@@ -264,14 +266,15 @@ const Model = class Model extends Component {
     })
 
     .then((result) => {
-      this.set(this.pk(), result.insertId);
+      result.insertId && this.set(this.pk(), result.insertId);
       return this;
     })
 
     .catch((e) => {
-      if (e.message.match(/duplicate/i)) {
-        throw new Conflict();
+      if (e.message.match(/^Duplicate/)) {
+        throw new Conflict(e.message);
       }
+      throw e;
     });
   }
 
@@ -290,7 +293,7 @@ const Model = class Model extends Component {
    * @return {}
    */
   delete () {
-    let db = this.manager().db();
+    let db = this.db();
     let table = this.table();
     let pk = this.pk();
     let stmt = t('DELETE FROM `%s` WHERE `%s` = :%s', table, pk, pk);
@@ -490,18 +493,12 @@ const Blob = exports.Blob = class Blob extends Model {
       }
     })
 
-    .then(() => this.lock())
-
     .then(() => {
       return new P((resolve, reject) => {
         tinify.fromBuffer(buffer).toBuffer((err, optimized_buffer) => {
           err ? reject(err) : resolve(optimized_buffer);
         });
       })
-    })
-
-    .then((optimized_buffer) => {
-      return this.unlock().then(() => optimized_buffer)
     })
 
     .then((optimized_buffer) => {
@@ -520,42 +517,6 @@ const Blob = exports.Blob = class Blob extends Model {
     return this.manager().first({hash: sum}).then((model) => {
       return model; 
     });
-  }
-
-  /**
-   * Resolve a Boolean that indicates whether or not the blob is locked
-   * @param void
-   * @return {Promise}
-   */
-  locked () {
-    return P.resolve(Boolean(this._lock));
-  }
-
-  /**
-   * Insert a row into the semaphore table. A rejection error means the blob
-   * is already locked.
-   * @param void
-   * @return {Promise}
-   */
-  lock () {
-    let sum = this.get('hash');
-
-    return this.get('semaphores').create({id: sum})
-
-    .then((semaphore) => {
-      this._lock = semaphore; 
-    })
-
-    .catch((e) => {
-      if (e.message.match(/Duplicate/)) {
-        throw new Conflict('lock conflict on blob ' + sum);
-      }
-      throw e;
-    })
-  }
-
-  unlock () {
-    return this._lock ? this._lock.delete() : P.resolve();
   }
 
   /**

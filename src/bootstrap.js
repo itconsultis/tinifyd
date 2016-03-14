@@ -27,7 +27,7 @@ module.exports = (config) => {
   .then(() => {
     return app.set('log', new (winston.Logger)({
       transports: [
-        new (winston.transports.Console)(),
+        new (winston.transports.Console)({level: config.log.level}),
       ]
     }));
   })

@@ -83,5 +83,5 @@ npm_tasks
 init_mysql
 run_migrations
 start_process
-tail -f logs/pm2/*.log
+tail -f -n 0 logs/pm2/*.log
 
