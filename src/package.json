@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@git.it-consultis.net:22080/itc/tinifyd.git"
+    "url": "ssh://git@github.com:itconsultis/tinifyd.git"
   },
   "author": "Rich Choy <rich@it-consultis.com>",
   "license": "MIT",
