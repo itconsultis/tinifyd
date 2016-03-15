@@ -30,7 +30,9 @@ than once, preserving image quality.
 
 - Clone this repository
 
-    git clone -b $VERSION_TAG --depth 1 git@github.com:itconsultis/tinifyd.git
+  ```
+  git clone -b $VERSION_TAG --depth 1 git@github.com:itconsultis/tinifyd.git
+  ```
 
   (replace `$VERSION_TAG` with the version you want)
 
@@ -40,7 +42,9 @@ than once, preserving image quality.
 
 - Run the `start` script from the project root.
 
-    ./start
+  ```
+  ./start
+  ```
 
 ## Workflow
 
@@ -48,36 +52,31 @@ than once, preserving image quality.
 
 #### Single image optimization procedure
 
-```
-ensure the image is a JPG or PNG
-acquire a lock on the image path
-compute the current hash sum of the image
-ensure the hash sum is not in the blob table; escape if it is
-optimize the image via tinify
-compute the hash sum of the optimized image
-replace the original with the optimized one
-record the optimized hash sum in the blob table
-release the lock on image path
-```
+- Ensure the image is a JPG or PNG
+- Acquire a lock on the image path
+- Compute the current hash sum of the image
+- Ensure the hash sum is not in the blob table; escape if it is
+- Optimize the image via tinify
+- Compute the hash sum of the optimized image
+- Replace the original with the optimized one
+- Record the optimized hash sum in the blob table
+- Release the lock on image path
 
 ### Batch optimization procedure
-```
-iterate over JPG and PNG image blobs found in the source directory
-execute single image optimization procedure on each image that is found
-```
+
+- Iterate over JPG and PNG image blobs found in the source directory
+- Execute single image optimization procedure on each image that is found
 
 ### Filesystem change event handling
-```
-listen for file change events on the source directory
-execute single image optimization procedure on each file that changes
-```
+
+- Listen for file change events on the source directory
+- Execute single image optimization procedure on each file that changes
+
 
 ### Locks
 
-Locking will be pessimistic.
-
-Periodically something (or someone) will need to remove stale locks.
-Details TBD.
+Locking will be pessimistic. The `janitor` plugin will periodically remove
+stale locks.
 
 ## Concurrency
 
