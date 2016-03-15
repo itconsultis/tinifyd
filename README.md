@@ -2,14 +2,14 @@
 
 [![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=develop)](https://travis-ci.org/itconsultis/tinifyd)
 
-tinifyd is a NodeJS process that continuously monitors one or more
-filesystem paths for changes to PNG and JPEG images, and compresses them on
-the fly via HTTP calls to the [TinyPNG API](https://tinypng.com/developers/reference).
+tinifyd is a NodeJS process that continuously monitors a filesystem path
+for changes to PNG and JPEG images. It compresses images on the fly via
+the [TinyPNG API](https://tinypng.com/developers/reference).
 
-The daemon records the SHA-1 sum of every every image it has ever processed
-in a SQL database. This prevents the same file from being optimized more
-than once, preserving image quality.
-
+TinyPNG is a fantastic image compression service, but its algorithm is lossy.
+Repeatedly compressing the same image will result in perceptible image degradation.
+tinifyd remembers the SHA-1 sum of every image that is has ever optimized, along
+with its path so that images are optimized *only once*.
 
 ## Features
 
