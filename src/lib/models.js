@@ -358,11 +358,6 @@ const Semaphore = class Semaphore extends Model {
     };
   }
 
-  set key (value) {
-    this.attrs.id = hash.digest(value);
-    return string.slug(value);
-  }
-
 }
 
 Semaphore.objects = new SemaphoreManager({model: Semaphore});
