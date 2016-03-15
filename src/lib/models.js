@@ -468,9 +468,9 @@ const Blob = exports.Blob = class Blob extends Model {
     if (!kosher) {
       throw new InvalidType('expected Buffer instance');
     }
-   
+
     let hasher = this.manager().get('hasher');
-     
+
     this.set('hash', hasher.digest(value));
 
     return value;
