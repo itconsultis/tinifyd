@@ -7,6 +7,8 @@ addons:
       - g++-4.8
 env:
   - CI_HOME=`pwd`/src
+  - CXX=g++-4.8
+  - CC=gcc-4.8
 node_js:
   - "v5.7.0"
 before_install:
