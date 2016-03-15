@@ -1,6 +1,6 @@
 # tinifyd
 
-[![Build Status](https://travis-ci.org/itconsultis/weixin-payment.svg?branch=develop)](https://travis-ci.org/itconsultis/weixin-payment)
+[![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=develop)](https://travis-ci.org/itconsultis/tinifyd)
 
 tinifyd is a NodeJS process that continuously monitors one or more
 filesystem paths for changes to PNG and JPEG images, and compresses them on
