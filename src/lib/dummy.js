@@ -1,5 +1,7 @@
 "use strict";
 
+const P = require('bluebird');
+
 ////////////////////////////////////////////////////////////////////////////
 
 const tinify = exports.tinify = {
@@ -12,9 +14,9 @@ const tinify = exports.tinify = {
         let max = 5000;
         let range = max - min;
         let rand = math.random() * range;
-        let duration = math.ceil(min + rand);
+        let sleep = math.ceil(min + rand);
 
-        setTimeout(() => done(false, buffer), duration);
+        return P.delay(sleep).then(() => buffer);
       }
     }
   },

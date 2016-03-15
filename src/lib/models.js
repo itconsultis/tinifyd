@@ -505,16 +505,11 @@ const Blob = exports.Blob = class Blob extends Model {
     })
 
     .then(() => {
-      return new P((resolve, reject) => {
-        tinify.fromBuffer(buffer).toBuffer((err, optimized_buffer) => {
-          err ? reject(err) : resolve(optimized_buffer);
-        });
-      })
+      return tinify.fromBuffer(buffer).toBuffer();
     })
 
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
-      this.set('hash', hash.digest(buffer));
 
       return this.save().then(() => this);
     })

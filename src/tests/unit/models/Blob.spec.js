@@ -54,10 +54,7 @@ describe('models.Blob', () => {
       let optimized_buffer = blob.get('buffer');
 
       tinify.fromBuffer.returns(tinify);
-
-      tinify.toBuffer = (callback) => {
-        callback(false, optimized_buffer);
-      };
+      tinify.toBuffer.returns(P.resolve(optimized_buffer));
 
       blob.optimized = sinon.stub();
       blob.optimized.returns(new P((resolve, reject) => resolve(false)));
