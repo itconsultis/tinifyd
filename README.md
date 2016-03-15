@@ -48,8 +48,9 @@ than once, preserving image quality.
 
 #### Single image optimization procedure
 
+```
 ensure the image is a JPG or PNG
-record a lock on the image path
+acquire a lock on the image path
 compute the current hash sum of the image
 ensure the hash sum is not in the blob table; escape if it is
 optimize the image via tinify
@@ -83,7 +84,6 @@ Details TBD.
 Each single image optimization procedure is to be *queued* into one ore more
 asynchronous task buffers. Each async buffer will have a cap on the number
 of concurrent optimization operations. This cap is to be configurable.
-
 
 ## License
 
