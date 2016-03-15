@@ -1,0 +1,9 @@
+language: node_js
+env:
+  - CI_HOME=`pwd`/src
+node_js:
+  - "5.7"
+before_script:
+  - npm install
+script: bin/mocha
+
