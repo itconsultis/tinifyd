@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 
 ///////////////////////////////////////////////////////////////////////////
 
-const PROJECT_ROOT = path.dirname(__filename);
+const APP_ROOT = path.dirname(__filename);
 const ENV = process.env;
 
 /**
@@ -25,9 +25,10 @@ const get = (key, fallback) => {
 ///////////////////////////////////////////////////////////////////////////
 
 // parse .env file and merge into process.env
-dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(PROJECT_ROOT, '.env')});
+dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(APP_ROOT, '.env')});
 
 module.exports = {
+
   debug: Boolean(get('TINIFYD_DEBUG', false)),
 
   log: {
