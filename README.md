@@ -46,6 +46,12 @@ than once, preserving image quality.
   ./start
   ```
 
+## How to run tests
+
+```
+npm test
+```
+
 ## Workflow
 
 ### Image optimization
