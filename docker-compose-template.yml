@@ -1,6 +1,6 @@
 node:
   image: node:5.7-wheezy
-  container_name: ${PROJECT}_node
+  container_name: ${DOCKER_CONTAINER_PREFIX}_node
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
   env_file: ./src/.env
@@ -11,7 +11,7 @@ node:
 
 db:
   image: percona:5.6
-  container_name: ${PROJECT}_db
+  container_name: ${DOCKER_CONTAINER_PREFIX}_db
   expose:
     - "3306"
   environment:
@@ -23,7 +23,7 @@ db:
 
 storage:
   image: busybox:latest
-  container_name: ${PROJECT}_storage
+  container_name: ${DOCKER_CONTAINER_PREFIX}_storage
   volumes:
     - /opt/tinifyd
     - ./src:/opt/tinifyd
