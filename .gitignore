@@ -1,5 +1,13 @@
 node_modules
 build/*
+docker-compose.yml
+src/.env
+.env
 
+/tmp
+/logs/mysql/*
+/logs/pm2/*
+
+npm-debug.log
 *.swp
 *.swo

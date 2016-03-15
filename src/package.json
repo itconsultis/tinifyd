@@ -1,0 +1,45 @@
+{
+  "name": "tinifyd",
+  "version": "1.0.0",
+  "description": "TinyPNG daemon",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --compilers js:babel-register"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@git.it-consultis.net:22080/itc/tinifyd.git"
+  },
+  "author": "Rich Choy <rich@it-consultis.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.3.3",
+    "chokidar": "^1.4.3",
+    "d3-queue": "^2.0.3",
+    "db-migrate": "^0.10.0-beta.11",
+    "db-migrate-mysql": "^1.1.6",
+    "dotenv": "^2.0.0",
+    "glob": "^7.0.3",
+    "glob-all": "^3.0.1",
+    "is": "^3.1.0",
+    "lodash": "^4.5.1",
+    "mkdirp": "^0.5.1",
+    "mmmagic": "^0.4.1",
+    "moment": "^2.11.2",
+    "mv": "^2.1.1",
+    "mysql": "^2.10.2",
+    "mysql2": "^1.0.0-rc.1",
+    "pm2": "^1.0.1",
+    "require-dir": "^0.3.0",
+    "tinify": "^1.2.0",
+    "winston": "^2.2.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-watch": "^4.3.5",
+    "mocha": "^2.4.5",
+    "sinon": "^1.17.3"
+  }
+}
