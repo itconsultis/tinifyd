@@ -2,7 +2,7 @@ language: node_js
 env:
   - CI_HOME=`pwd`/src
 node_js:
-  - "v5.7.0"
+  - "v5.1.0" # apparently 5.1.0 is the max supported version
 install:
   - npm install
 script: bin/mocha
