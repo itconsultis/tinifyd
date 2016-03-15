@@ -20,6 +20,7 @@ const fs = require('fs');
 
 const NotImplemented = e.NotImplemented;
 const InvalidType = e.InvalidType;
+const InvalidState = e.InvalidState;
 const AlreadyOptimized = e.AlreadyOptimized;
 const Conflict = e.Conflict;
 const NotFound = e.NotFound;
@@ -111,7 +112,9 @@ const Manager = class Manager extends Component {
   first (params, options) {
     let opts = _.defaults({limit: 1}, options || {});
 
-    return this.filter(params, opts).then((models) => {
+    return this.filter(params, opts)
+    
+    .then((models) => {
       let model = models.shift() || null;
 
       if (!model && opts.fail) {
@@ -130,7 +133,6 @@ const Manager = class Manager extends Component {
    */
   find (id, options) {
     let opts = _.defaults({fail: false}, options || {});
-
     let model = this.model().prototype;
     let params = {};
 
@@ -162,6 +164,11 @@ exports.Manager = Manager;
 
 ///////////////////////////////////////////////////////////////////////////
 
+/**
+ * Model is like an active record object.
+ * @class Model
+ * @extends foundation:Component
+ */
 const Model = class Model extends Component {
 
   /**
@@ -174,6 +181,7 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Return the mysql2.Connection instance
    * @param void
    * @return {mysql2.Connection}
    */
@@ -182,7 +190,8 @@ const Model = class Model extends Component {
   }
 
   /**
-   * Return a string that identifies the model's database table
+   * Return a string that identifies the model's database table. Subclasses
+   * *must* override this.
    * @param void
    * @return {String}
    */
@@ -191,7 +200,7 @@ const Model = class Model extends Component {
   }
 
   /**
-   * Return a string that identifies the primary key
+   * Return a string that identifies the primary key.
    * @param void
    * @return {String}
    */
@@ -200,8 +209,7 @@ const Model = class Model extends Component {
   }
 
   /**
-   * Return a list that identifies attributes that have a matching
-   * column in the database table
+   * Return a list of attributes that identify columns in the db table
    * @param void
    * @return {Array}
    */
@@ -219,6 +227,8 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Return a list of db column attributes that have changed since the
+   * model was instantiated.
    * @async
    * @param void
    * @return {Array}
@@ -228,6 +238,7 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Write model attributes to the database 
    * @async
    * @param void
    * @return {Model}
@@ -237,6 +248,7 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Enter a new row in the database table
    * @async
    * @param void
    * @return {Model}
@@ -280,6 +292,7 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Save model attributes to the matching row in the database table
    * @async
    * @param void
    * @return {Model}
@@ -289,11 +302,16 @@ const Model = class Model extends Component {
   }
 
   /**
+   * Remove the matching row in the database table
    * @async
    * @param void
    * @return {}
    */
   delete () {
+    if (!this.persistent()) {
+      throw new InvalidState('model does not have a primary key');
+    }
+
     let db = this.db();
     let table = this.table();
     let pk = this.pk();
@@ -462,6 +480,12 @@ const Blob = exports.Blob = class Blob extends Model {
     return 'blob';
   }
 
+  /**
+   * Magic setter for the "buffer" attribute. Generate a binary SHA-1 hash digest
+   * and assign it to the "hash" attribute.
+   * @param {Buffer} value
+   * @return {Buffer}
+   */
   set buffer (value) {
     let kosher = value instanceof Buffer;
 
@@ -510,6 +534,14 @@ const Blob = exports.Blob = class Blob extends Model {
     })
   }
 
+  /**
+   * Check whether the blob is already optimized. A blob is considered
+   * optimized if its hash exists in the "blob" table. Return the matching
+   * blob instance if there is a match on the hash.
+   * @async
+   * @param void
+   * @return {models.Blob}
+   */
   optimized () {
     let sum = this.get('hash');
 
@@ -563,6 +595,12 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
     return 'blob_path';
   }
 
+  /**
+   * Magic setter for the "path" attribute. Generate a binary SHA-1 sum of the
+   * blob path and assign it to the "hash" attribute. 
+   * @param {String} value
+   * @return {String}
+   */
   set path (value) {
     this.set('hash', hash.digest(value));
     return value;
