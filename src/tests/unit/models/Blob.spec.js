@@ -48,7 +48,7 @@ describe('models.Blob', () => {
     beforeEach(before);
     afterEach(after);
 
-    it('resolves the same Blob', (done) => {
+    it('works as expected', (done) => {
       let buffer;
       let tinify = {fromBuffer: sinon.stub(), toBuffer: sinon.stub()};
       let optimized_buffer = blob.get('buffer');
@@ -69,7 +69,6 @@ describe('models.Blob', () => {
         expect(result).to.eql(blob);
         expect(tinify.fromBuffer.calledOnce).to.be.ok;
       })
-
 
       .then(done);
     })
