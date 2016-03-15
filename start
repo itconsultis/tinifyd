@@ -43,8 +43,12 @@ init_mysql () {
 
 
 npm_tasks () {
-    echo "Rebuilding npm dependencies..."
-    #docker exec $NODE_CONTAINER bash -c "npm rebuild"
+    echo "Installing npm dependencies..."
+    docker exec $NODE_CONTAINER bash -c "npm install"
+
+    if [ "$TINIFYD_NPM_REBUILD" -ne "0" ]; then
+        docker exec $NODE_CONTAINER bash -c "npm rebuild"
+    fi
 }
 
 
