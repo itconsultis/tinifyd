@@ -27,11 +27,11 @@ storage:
   volumes:
     - /opt/tinifyd
     - ./src:/opt/tinifyd
-    - ./logs/pm2:/var/log/pm2
 
     - ${TINIFYD_SOURCE_PATH}:/var/lib/tinifyd/images
     - ${TINIFYD_TEMP_PATH}:/tmp/tinifyd
-    - ./logs/mysql:/var/log/mysql
-    #- ./data/mysql:/var/lib/mysql
+    - ./var/log/pm2:/var/log/pm2
+    - ./var/log/mysql:/var/log/mysql
+    - ./var/lib/mysql:/var/lib/mysql
     #- ./env/db/etc/mysql:/etc/mysql
 
