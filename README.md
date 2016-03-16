@@ -28,7 +28,7 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b 0.9.1 --depth 1 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.9.2 --depth 1 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
