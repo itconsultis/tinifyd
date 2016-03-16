@@ -1,6 +1,6 @@
 # tinifyd
 
-[![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=develop)](https://travis-ci.org/itconsultis/tinifyd)
+[![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=master)](https://travis-ci.org/itconsultis/tinifyd)
 
 tinifyd is a NodeJS process that continuously monitors a filesystem path
 for changes to PNG and JPEG images. It compresses images on the fly via
@@ -16,13 +16,10 @@ with its path so that images are optimized *only once*.
 - Low CPU load; images are compressed on TinyPNG's servers
 - Images are optimized only once
 
-
 ## Requirements
 
 - TinyPNG [API key](https://tinypng.com/developers)
 - [Docker](http://www.docker.com/) (if you want to run the daemon inside a container)
-
-
 
 ## How to run the daemon
 
@@ -31,10 +28,8 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b $VERSION_TAG --depth 1 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.9.1 --depth 1 git@github.com:itconsultis/tinifyd.git
   ```
-
-  (replace `$VERSION_TAG` with the version you want)
 
 - Copy `src/.env.example` to `src/.env`.
 

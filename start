@@ -14,9 +14,9 @@ fi
 
 source ./src/.env
 
-NODE_CONTAINER=${PROJECT}_node
-DB_CONTAINER=${PROJECT}_db
-STORAGE_CONTAINER=${PROJECT}_storage
+NODE_CONTAINER=${DOCKER_CONTAINER_PREFIX}_node
+DB_CONTAINER=${DOCKER_CONTAINER_PREFIX}_db
+STORAGE_CONTAINER=${DOCKER_CONTAINER_PREFIX}_storage
 
 # wait for mysql server to start accepting queries
 init_mysql () {
