@@ -1,5 +1,7 @@
 # tinifyd
 
+DO NOT USE THIS SOFTWARE UNTIL THIS NOTICE IS REMOVED. YOU ARE WARNED.
+
 [![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=master)](https://travis-ci.org/itconsultis/tinifyd)
 
 tinifyd is a NodeJS process that continuously monitors a filesystem path
