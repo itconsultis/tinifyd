@@ -1,6 +1,6 @@
 # tinifyd
 
-[![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=develop)](https://travis-ci.org/itconsultis/tinifyd)
+[![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=master)](https://travis-ci.org/itconsultis/tinifyd)
 
 tinifyd is a NodeJS process that continuously monitors a filesystem path
 for changes to PNG and JPEG images. It compresses images on the fly via
@@ -28,7 +28,7 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b develop --depth 1 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.9.1 --depth 1 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
