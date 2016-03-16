@@ -12,8 +12,7 @@ CREATE TABLE `blob_path` (
   `hash` binary(20) NOT NULL,
   `path` text NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `blob_path_uniq_1` (`hash`),
-  KEY `blob_path_idx_1`  (`blob_id`),
+  UNIQUE KEY `blob_path_uniq_1` (`blob_id`, `hash`),
   CONSTRAINT `blob_path_fk_1` FOREIGN KEY (`blob_id`) REFERENCES `blob`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
