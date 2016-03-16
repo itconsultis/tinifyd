@@ -15,6 +15,7 @@ const moment = require('moment');
 const sql = require('./sql');
 const e = require('./exceptions');
 const fs = require('fs');
+const is = require('is');
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -364,19 +365,51 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
    * @return void
    */
   cleanup (maxage, now) {
+    return this.stale(maxage, now, true)
+
+    .then((ids) => {
+      if (!ids.length) {
+        return [];
+      }
+
+      let db = this.db();
+      let table = this.table();
+      let bindings = ids.map(() => '?').join(',');
+      let stmt = t('DELETE FROM `%s` WHERE `id` in (%s)', table, bindings);
+
+      return new P((resolve, reject) => {
+        db.execute(stmt, ids, (err, result) => {
+          err ? reject(err) : resolve(ids);
+        });
+      })
+    });
+  }
+
+  /**
+   * Return expired Semaphore instances
+   * @async
+   * @param {Number} maxage
+   * @param {Date} now
+   * @param {Boolean} ids  return ids only
+   * @return {Array}
+   */
+  stale (maxage, now, ids) {
     let db = this.db();
-    let model = this.get('model').prototype;
-    let table = model.table();
-    let stmt = t('DELETE FROM `%s` WHERE `created_at` <= ?', table);
+    let ModelClass = this.model();
+    let table = this.table();
+    let stmt = t('SELECT id FROM `%s` WHERE `created_at` <= ?', table);
     let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
     let sqltime = sql.format.datetime(threshold);
 
     return new P((resolve, reject) => {
-      db.execute(stmt, [sqltime], (err, result) => {
-        err ? reject(err) : resolve(result);
+      db.execute(stmt, [sqltime], (err, rows) => {
+        err ? reject(err) : resolve(rows.map((row) => {
+          return ids ? new Buffer(row.id, 'binary') : new ModelClass(row);
+        }));
       });
     })
   }
+
 }
 
 const Semaphore = class Semaphore extends Model {
@@ -565,7 +598,16 @@ const Blob = exports.Blob = class Blob extends Model {
 
       return this.save().then(() => this)
 
-      .catch(Conflict, (e) => this);
+      // recover from a race condition
+      .catch(Conflict, (e) => {
+        return manager.first({hash: this.get('hash')})
+
+        .then((blob) => {
+          this.set('id', blob.get('id'));
+          return this;
+        })
+
+      });
     })
   }
 
