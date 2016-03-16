@@ -14,9 +14,13 @@ const not_implemented = new Error('not implemented');
 /**
  * Daemon is an application-aware context that manages the lifecycle of
  * a collection of "plugins" (see daemon.Plugin).
+ * @extends foundation:Component
  */
 const Daemon = exports.Daemon = class Daemon extends Component {
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       app: null,
@@ -26,6 +30,9 @@ const Daemon = exports.Daemon = class Daemon extends Component {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   constructor (attrs) {
     super(attrs);
 
@@ -48,8 +55,9 @@ const Daemon = exports.Daemon = class Daemon extends Component {
 
   /**
    * Lifecycle moment
+   * @async
    * @param void
-   * @return {Promise}
+   * @return void
    */
   up () {
     return P.all(_.map(this.plugins, (plugin) => plugin.up()));
@@ -57,8 +65,9 @@ const Daemon = exports.Daemon = class Daemon extends Component {
 
   /**
    * Lifecycle moment
+   * @async
    * @param void
-   * @return {Promise}
+   * @return void
    */
   down () {
     return P.all(_.map(this.plugins, (plugin) => plugin.down()));
@@ -69,10 +78,13 @@ const Daemon = exports.Daemon = class Daemon extends Component {
 ////////////////////////////////////////////////////////////////////////////
 
 /**
- * Plugin is an application-aware context that does something.
+ * @classdesc Plugin is an application-aware context that does something.
  */
 const Plugin = exports.Plugin = class Plugin extends Component {
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       app: null,
@@ -95,8 +107,9 @@ const Plugin = exports.Plugin = class Plugin extends Component {
 
   /**
    * Lifecycle moment
+   * @async
    * @param void
-   * @return {Promise}
+   * @return void
    */
   up () {
     return P.resolve();
@@ -104,14 +117,16 @@ const Plugin = exports.Plugin = class Plugin extends Component {
 
   /**
    * Lifecycle moment
+   * @async
    * @param void
-   * @return {Promise}
+   * @return void
    */
   down () {
     return P.resolve();
   }
 
   /**
+   * Derive a fully qualified 
    * @param {String} relpath
    * @return {String}
    */
