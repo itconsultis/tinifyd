@@ -1,10 +1,11 @@
 "use strict";
 
 const P = require('bluebird');
+const tinify = require('tinify');
 
 ////////////////////////////////////////////////////////////////////////////
 
-const tinify = exports.tinify = {
+const tinifydummy = exports.tinify = {
 
   fromBuffer (buffer) {
     return {
@@ -13,8 +14,12 @@ const tinify = exports.tinify = {
         let min = 500;
         let max = 5000;
         let range = max - min;
-        let rand = math.random() * range;
-        let sleep = math.ceil(min + rand);
+        let rand = math.random();
+        let sleep = P.delay(math.ceil(min + (rand * range)));
+
+        if (rand < 0.01) {
+          return sleep.then(() => P.reject(new tinify.Error('random dummy error')));
+        }
 
         return P.delay(sleep).then(() => buffer);
       }
