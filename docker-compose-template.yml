@@ -30,8 +30,8 @@ storage:
 
     - ${TINIFYD_SOURCE_PATH}:/var/lib/tinifyd/images
     - ${TINIFYD_TEMP_PATH}:/tmp/tinifyd
+    - ${TINIFYD_DB_DATA_VOLUME}:/var/lib/mysql
     - ./var/log/pm2:/var/log/pm2
     - ./var/log/mysql:/var/log/mysql
-    - ./var/lib/mysql:/var/lib/mysql
     #- ./env/db/etc/mysql:/etc/mysql
 
