@@ -89,6 +89,7 @@ of concurrent optimization operations. This cap is to be configurable.
 
 ## Todos
 
+- make image backups before optimizing
 - more tests
 - race condition recovery
 
