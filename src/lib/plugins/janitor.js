@@ -51,12 +51,10 @@ module.exports = class Janitor extends Plugin {
 
     return Semaphore.objects.cleanup(config.opt.lockttl)
 
-    .then((result) => {
-      let n = result.affectedRows;
-
-      if (n > 0) {
-        log.info('cleaned up %s stale locks', result.affectedRows);
-        eventbus.emit('cleanup:locks');
+    .then((ids) => {
+      if (ids.length) {
+        log.info('cleaned up %s stale locks', ids.length);
+        eventbus.emit('locks:cleared', ids);
       }
     });
   }
