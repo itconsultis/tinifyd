@@ -563,7 +563,9 @@ const Blob = exports.Blob = class Blob extends Model {
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
 
-      return this.save().then(() => this);
+      return this.save().then(() => this)
+
+      .catch(Conflict, (e) => this);
     })
   }
 
