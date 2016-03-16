@@ -1,6 +1,6 @@
 # tinifyd
 
-DO NOT USE THIS SOFTWARE UNTIL THIS NOTICE IS REMOVED. YOU ARE WARNED.
+**This software is not yet tested. Do NOT use it until this notice is removed. You are warned!**
 
 [![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=master)](https://travis-ci.org/itconsultis/tinifyd)
 
