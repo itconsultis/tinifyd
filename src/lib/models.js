@@ -33,14 +33,29 @@ const NotFound = e.NotFound;
  */
 const Manager = class Manager extends Component {
 
+  /**
+   * Return the database connection
+   * @param void
+   * @return {mysql2.Connection}
+   */
   db () {
     return this.get('db') || Manager.db;
   }
 
+  /**
+   * Return the model constructor
+   * @param void
+   * @return {Function}
+   */
   model () {
     return this.get('model');
   }
 
+  /**
+   * Return the database table corresponding to the model
+   * @param void
+   * @return {String}
+   */
   table () {
     return this.model().prototype.table();
   }
@@ -96,10 +111,7 @@ const Manager = class Manager extends Component {
 
     return new P((resolve, reject) => {
       return db.execute(stmt, params, (err, rows) => {
-        if (err) {
-          return reject(err);
-        }
-        resolve(rows[0].aggregate);
+        err ? reject(err) : resolve(rows[0].aggregate);
       });
     });
   }
@@ -335,6 +347,9 @@ exports.Model = Model;
 
 const SemaphoreManager = class SemaphoreManager extends Manager {
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       model: Semaphore,
@@ -366,10 +381,16 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
 
 const Semaphore = class Semaphore extends Model {
 
+  /**
+   * @inheritdoc
+   */
   table () {
     return 'semaphore';
   }
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       id: null,
@@ -386,6 +407,9 @@ exports.Semaphore = Semaphore;
 
 const BlobManager = exports.BlobManager = class BlobManager extends Manager {
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       model: Blob,
@@ -463,10 +487,16 @@ exports.BlobManager = BlobManager;
 
 const Blob = exports.Blob = class Blob extends Model {
 
+  /**
+   * @inheritdoc
+   */
   columns () {
     return [this.pk(), 'hash'];
   }
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       id: null,
@@ -476,6 +506,9 @@ const Blob = exports.Blob = class Blob extends Model {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   table () {
     return 'blob';
   }
@@ -578,6 +611,9 @@ exports.Blob = Blob;
 
 const BlobPath = exports.BlobPath = class BlobPath extends Model {
 
+  /**
+   * @inheritdoc
+   */
   defaults () {
     return {
       id: null,
@@ -587,10 +623,16 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
     };
   }
 
+  /**
+   * @inheritdoc
+   */
   columns () {
     return [this.pk(), 'blob_id', 'hash', 'path'];
   }
 
+  /**
+   * @inheritdoc
+   */
   table () {
     return 'blob_path';
   }
@@ -607,8 +649,9 @@ const BlobPath = exports.BlobPath = class BlobPath extends Model {
   }
 
   /**
-   * Read the contents of the BlobPath into a Buffer. You need to supply
-   * the prefix argument since we are storing paths relative to the source directory
+   * Read the contents of the BlobPath into a Buffer. You need to supply the
+   * prefix argument since we are storing paths relative to the source
+   * directory
    * @async
    * @param {String} prefix  path prefix
    * @param {Object} filesystem   optional filesystem 

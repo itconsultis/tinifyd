@@ -6,6 +6,11 @@ const notcoercable = new Error('got non-coercable input type');
 const coerce = exports.coerce = {};
 
 
+/**
+ * Convert the input value to an Object
+ * @param {Object|Map|Set|Array} input
+ * @return {Object}
+ */
 coerce.object = (input) => {
   if (is.object(input)) {
     return input;
@@ -41,6 +46,7 @@ coerce.object = (input) => {
 };
 
 /**
+ * Convert the supplied input to a Set
  * @param {Object|Array|Map|Set} input
  * @return {Set}
  */
