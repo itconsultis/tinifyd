@@ -132,7 +132,7 @@ const Manager = class Manager extends Component {
    * @return {Model}
    */
   find (id, options) {
-    let opts = _.defaults({fail: false}, options || {});
+    let opts = _.defaults(options || {}, {fail: false});
     let model = this.model().prototype;
     let params = {};
 
