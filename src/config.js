@@ -66,6 +66,7 @@ module.exports = {
 
     optimizer: {
       enabled: true,
+      frequency: Number(get('TINIFYD_OPTIMIZER_FREQUENCY', 900000)),
       filemode: '0644',
       dirmode: '0755',
     }

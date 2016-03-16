@@ -24,7 +24,7 @@ init_mysql () {
 
     echo "Waiting for MySQL server to start accepting queries..."
     while [ 0 ]; do
-        cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"'"
+        cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"' 2> /dev/null"
         result=$(docker exec $DB_CONTAINER bash -c "$cmd" || true)
         sleep 2
 
@@ -87,5 +87,5 @@ npm_tasks
 init_mysql
 run_migrations
 start_process
-tail -f -n 0 logs/pm2/*.log
+tail -f -n 0 var/log/pm2/stdout*.log
 

@@ -60,7 +60,16 @@ const Daemon = exports.Daemon = class Daemon extends Component {
    * @return void
    */
   up () {
-    return P.all(_.map(this.plugins, (plugin) => plugin.up()));
+    let log = this.get('app').get('log');
+
+    return P.all(_.map(this.plugins, (plugin, name) => {
+      return plugin.up().then(() => log.info('%s plugin ready', name));
+    }))
+
+    .catch((e) => {
+      console.log(e);
+      return P.reject(e);  
+    })
   }
 
   /**
@@ -132,7 +141,7 @@ const Plugin = exports.Plugin = class Plugin extends Component {
    */
   source (relpath) {
     let prefix = this.get('source');
-    return relpath ? path.join(prefix, relpath) : prefix;
+    return relpath ? path.normalize(path.join(prefix, relpath)) : prefix;
   }
 
   /**
@@ -141,7 +150,7 @@ const Plugin = exports.Plugin = class Plugin extends Component {
    */
   temp (relpath) {
     let prefix = this.get('temp');
-    return relpath ? path.join(prefix, relpath) : prefix;
+    return relpath ? path.normalize(path.join(prefix, relpath)) : prefix;
   }
 
 }

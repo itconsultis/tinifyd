@@ -5,7 +5,7 @@
     "watch": ["lib", "index.js", "bootstrap.js"],
     "instances": 1,
     "exec_mode": "fork",
-    "error_file": "/var/log/pm2/tinifyd-stderr.log",
-    "out_file": "/var/log/pm2/tinifyd-stdout.log"
+    "error_file": "/var/log/pm2/stderr.log",
+    "out_file": "/var/log/pm2/stdout.log"
   }]
 }
