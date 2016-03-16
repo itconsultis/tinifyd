@@ -15,6 +15,7 @@ const moment = require('moment');
 const sql = require('./sql');
 const e = require('./exceptions');
 const fs = require('fs');
+const is = require('is');
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -357,26 +358,64 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
   }
 
   /**
-   * Remove semaphores older than maxage (milliseconds)
+   * Delete semaphores older than maxage (milliseconds). Return the deleted
+   * models.
    * @async
    * @param {Number}   maxage
    * @param {Date}     now         - for testing
-   * @return void
+   * @return {Array}
    */
   cleanup (maxage, now) {
+    return this.stale(maxage, now)
+
+    .then((models) => {
+      if (!models.length) {
+        return [];
+      }
+
+      let db = this.db();
+      let table = this.table();
+      let bindings = [];
+
+      let ids = models.map((model) => {
+        bindings.push('?');
+        return model.get('id');
+      });
+
+      let sql = 'DELETE FROM `%s` WHERE `id` in (%s)';
+      let stmt = t(sql, table, bindings.join(','));
+
+      return new P((resolve, reject) => {
+        db.execute(stmt, ids, (err, result) => {
+          err ? reject(err) : resolve(models);
+        });
+      })
+    });
+  }
+
+  /**
+   * Return expired Semaphore instances
+   * @async
+   * @param {Number} maxage
+   * @param {Date} now
+   * @param {Boolean} ids  return ids only
+   * @return {Array}
+   */
+  stale (maxage, now) {
     let db = this.db();
-    let model = this.get('model').prototype;
-    let table = model.table();
-    let stmt = t('DELETE FROM `%s` WHERE `created_at` <= ?', table);
+    let ModelClass = this.model();
+    let table = this.table();
+    let stmt = t('SELECT * FROM `%s` WHERE `created_at` <= ?', table);
     let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
     let sqltime = sql.format.datetime(threshold);
 
     return new P((resolve, reject) => {
-      db.execute(stmt, [sqltime], (err, result) => {
-        err ? reject(err) : resolve(result);
+      db.execute(stmt, [sqltime], (err, rows) => {
+        err ? reject(err) : resolve(rows.map((row) => new ModelClass(row)));
       });
     })
   }
+
 }
 
 const Semaphore = class Semaphore extends Model {
@@ -394,7 +433,17 @@ const Semaphore = class Semaphore extends Model {
   defaults () {
     return {
       id: null,
+      path: null,
     };
+  }
+
+  columns () {
+    return ['id', 'path'];
+  }
+
+  set id (value) {
+    let kosher = value instanceof Buffer;
+    return kosher ? value : new Buffer(value, 'binary');  
   }
 
 }
@@ -427,9 +476,9 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
    * @param {String} source   optional source directory
    * @return {Array}
    */
-  globs (source) {
+  globs (prefix) {
     return _.flatten(_.map(this.get('allowed'), (exts, type) => {
-      return _.map(exts, (ext) => t('%s/**/*.%s', source || '.', ext));
+      return _.map(exts, (ext) => t('%s/**/*.%s', prefix || '.', ext));
     }))
   }
 
@@ -565,7 +614,16 @@ const Blob = exports.Blob = class Blob extends Model {
 
       return this.save().then(() => this)
 
-      .catch(Conflict, (e) => this);
+      // recover from a race condition
+      .catch(Conflict, (e) => {
+        return manager.first({hash: this.get('hash')})
+
+        .then((blob) => {
+          this.set('id', blob.get('id'));
+          return this;
+        })
+
+      });
     })
   }
 

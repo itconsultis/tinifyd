@@ -29,7 +29,7 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(APP_ROOT, '.env')});
 
 module.exports = {
 
-  debug: Boolean(get('TINIFYD_DEBUG', false)),
+  debug: Boolean(Number(get('TINIFYD_DEBUG', false))),
 
   log: {
     level: get('TINIFYD_LOG_LEVEL', 'info'),
@@ -43,7 +43,7 @@ module.exports = {
   },
 
   tinify: {
-    dummy: Boolean(get('TINIFYD_API_DUMMY', 0)),
+    dummy: Boolean(Number(get('TINIFYD_API_DUMMY', 0))),
     host: get('TINIFYD_API_HOST', 'api.tinify.com'),
     key: get('TINIFYD_API_KEY', '--secure--'),
   },
@@ -66,6 +66,7 @@ module.exports = {
 
     optimizer: {
       enabled: true,
+      frequency: Number(get('TINIFYD_OPTIMIZER_FREQUENCY', 900000)),
       filemode: '0644',
       dirmode: '0755',
     }

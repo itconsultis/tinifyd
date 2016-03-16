@@ -1,5 +1,7 @@
 # tinifyd
 
+**This software is not yet tested. Do NOT use it until this notice is removed. You are warned!**
+
 [![Build Status](https://travis-ci.org/itconsultis/tinifyd.svg?branch=master)](https://travis-ci.org/itconsultis/tinifyd)
 
 tinifyd is a NodeJS process that continuously monitors a filesystem path
@@ -28,7 +30,7 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b 0.9.2 --depth 1 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.9.3 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
@@ -84,6 +86,11 @@ stale locks.
 Each single image optimization procedure is to be *queued* into one ore more
 asynchronous task buffers. Each async buffer will have a cap on the number
 of concurrent optimization operations. This cap is to be configurable.
+
+## Todos
+
+- more tests
+- race condition recovery
 
 ## License
 

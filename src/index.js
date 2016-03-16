@@ -5,17 +5,11 @@ const P = require('bluebird');
 const config = require('./config');
 
 if (config.debug) {
-  P.config({
-    longStackTraces: true,
-  });
-  //process.on("unhandledRejection", function(reason, promise) {
-  //  console.log(arguments);
-  //});
-
+  P.config({longStackTraces: true});
   console.log(config);
 }
 
 boot(config).then((app) => {
-  app.get('log').info('daemon up');
-})
+  app.get('log').info('daemon ready');
+});
 
