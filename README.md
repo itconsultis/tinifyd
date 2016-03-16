@@ -87,6 +87,11 @@ Each single image optimization procedure is to be *queued* into one ore more
 asynchronous task buffers. Each async buffer will have a cap on the number
 of concurrent optimization operations. This cap is to be configurable.
 
+## Todos
+
+- more tests
+- race condition recovery
+
 ## License
 
 MIT
