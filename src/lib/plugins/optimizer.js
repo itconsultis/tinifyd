@@ -14,6 +14,7 @@ const mkdirp = P.promisify(require('mkdirp'));
 const mv = P.promisify(require('mv'));
 const write = P.promisify(fs.writeFile);
 const hash = require('../hash');
+const tinify = require('tinify');
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -137,6 +138,7 @@ module.exports = class Optimizer extends Plugin {
           })
 
           .catch((e) => {
+            log.warn('[FAIL] ' + relpath);
             lock && lock.delete();
             log.error(e.message);
             log.debug(e.stack);
