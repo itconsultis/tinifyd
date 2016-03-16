@@ -77,7 +77,7 @@ module.exports = class Optimizer extends Plugin {
       })
 
       let iterate = () => this.optimizeAllPaths();
-      this.interval = setInterval(iterate, 60000);
+      this.interval = setInterval(iterate, this.get('frequency') || 900000);
     })
   }
 
@@ -182,7 +182,7 @@ module.exports = class Optimizer extends Plugin {
         .then((blob) => {
           return mv(temp_path, source_path, {clobber: true, mkdirp: true})
           .then(() => {
-            log.info('[ OK ] ' + relpath);
+            log.info('[CHGD] ' + relpath);
             return blob;
           });
         })
