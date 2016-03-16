@@ -411,7 +411,6 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
 
     return new P((resolve, reject) => {
       db.execute(stmt, [sqltime], (err, rows) => {
-        console.log(rows);
         err ? reject(err) : resolve(rows.map((row) => new ModelClass(row)));
       });
     })
@@ -477,9 +476,9 @@ const BlobManager = exports.BlobManager = class BlobManager extends Manager {
    * @param {String} source   optional source directory
    * @return {Array}
    */
-  globs (source) {
+  globs (prefix) {
     return _.flatten(_.map(this.get('allowed'), (exts, type) => {
-      return _.map(exts, (ext) => t('%s/**/*.%s', source || '.', ext));
+      return _.map(exts, (ext) => t('%s/**/*.%s', prefix || '.', ext));
     }))
   }
 

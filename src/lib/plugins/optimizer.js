@@ -15,6 +15,7 @@ const mv = P.promisify(require('mv'));
 const write = P.promisify(fs.writeFile);
 const hash = require('../hash');
 const tinify = require('tinify');
+const glob = P.promisify(require('glob-all'));
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -68,10 +69,15 @@ module.exports = class Optimizer extends Plugin {
    * @return void
    */
   up () {
-    return super.up().then(() => {
+    return super.up()
+
+    .then(() => {
       this.bindings().forEach((b) => {
         b.subject.on(b.event, b.listener);
       })
+
+      let iterate = () => this.optimizeAllPaths();
+      this.interval = setInterval(iterate, 60000);
     })
   }
 
@@ -82,6 +88,8 @@ module.exports = class Optimizer extends Plugin {
    * @return void
    */
   down () {
+    clearInterval(this.interval);
+
     this.bindings().forEach((b) => {
       b.subject.removeListener(b.event, b.listener);
     });
@@ -90,20 +98,21 @@ module.exports = class Optimizer extends Plugin {
   }
 
   /**
-   * Optimize all images in the source directory. Return a list of file paths
-   * that were optimized;
-   * @async
+   * Optimize all images in the source directory
    * @param void
-   * @return {Array}
+   * @return void
    */
-  optimizeAllPaths() {
-    return Blob.objects.glob(this.source())
+  optimizeAllPaths () {
+    console.log('optimizeAllPaths()');
+    let queue = this.get('queue');
+    let relativize = (abspath) => this.normalizeSourcePath(abspath);
+    let optimize = (relpath) => this.optimizePath(relpath);
+    let globs = Blob.objects.globs(this.source());
+    let noop = (done) => done();
 
-    .then((filepaths) => {
-      return P.all(filepaths.map((filepath) => {
-        return this.optimizePath(filepath).then(() => filepath);
-      }));
-    })
+    glob(globs).then((abspaths) => {
+      abspaths.map(relativize).forEach(optimize);
+    });
   }
 
   /**
@@ -254,5 +263,10 @@ module.exports = class Optimizer extends Plugin {
     return P.all(semaphores.map((semaphore) => {
       return this.optimizePath(semaphore.get('path'));
     }));
+  }
+
+  normalizeSourcePath(filepath) {
+    let output = filepath.split(this.source()).pop();
+    return output.slice(1);
   }
 }

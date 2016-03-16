@@ -57,7 +57,6 @@ module.exports = class Janitor extends Plugin {
       log.info('deleted %s stale locks', n);
 
       semaphores.forEach((semaphore) => {
-        console.log(semaphore.attributes());
         console.log(' ' + semaphore.get('path'));
       });
 
