@@ -17,7 +17,7 @@ const tinifydummy = exports.tinify = {
         let rand = math.random();
         let sleep = P.delay(math.ceil(min + (rand * range)));
 
-        if (rand < 0.01) {
+        if (rand < 0.1) {
           return sleep.then(() => P.reject(new tinify.Error('random dummy error')));
         }
 

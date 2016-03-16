@@ -41,8 +41,20 @@ module.exports = class Optimizer extends Plugin {
             return self.optimizePath(relpath);
           }
         },
-        {subject: watcher, event: 'change', listener: (path) => this.optimizePath(path)},
-        {subject: watcher, event: 'delete', listener: () => null},
+        {
+          subject: watcher,
+          event: 'change',
+          listener: function(relpath) {
+            return self.optimizePath(relpath);
+          },
+        },
+        {
+          subject: eventbus,
+          event: 'locks:cleared',
+          listener: function(semaphores) {
+            return self.retryPaths(semaphores);
+          },
+        },
       ];
     };
 
@@ -57,7 +69,7 @@ module.exports = class Optimizer extends Plugin {
    */
   up () {
     return super.up().then(() => {
-      _.each(this.bindings(), (b) => {
+      this.bindings().forEach((b) => {
         b.subject.on(b.event, b.listener);
       })
     })
@@ -70,9 +82,9 @@ module.exports = class Optimizer extends Plugin {
    * @return void
    */
   down () {
-    _.each(this.bindings(), (b) => {
+    this.bindings().forEach((b) => {
       b.subject.removeListener(b.event, b.listener);
-    })
+    });
 
     return super.down();
   }
@@ -84,7 +96,7 @@ module.exports = class Optimizer extends Plugin {
    * @param void
    * @return {Array}
    */
-  optimizeSourceDirectory () {
+  optimizeAllPaths() {
     return Blob.objects.glob(this.source())
 
     .then((filepaths) => {
@@ -94,14 +106,18 @@ module.exports = class Optimizer extends Plugin {
     })
   }
 
+  /**
+   * Optimize the image at the supplied relative path
+   * @param {String} relpath
+   * @return void
+   */
   optimizePath (relpath) {
-    let queue = this.get('queue');
     let log = this.app('log');
 
     return Blob.objects.fromFile(this.source(relpath))
 
     .then((blob) => {
-      return this.optimizeBlob(blob, relpath)
+      this.optimizeBlob(blob, relpath)
     })
 
     .catch(InvalidType, (e) => {
@@ -112,93 +128,94 @@ module.exports = class Optimizer extends Plugin {
   optimizeBlob (blob, relpath) {
     let queue = this.get('queue');
     let log = this.app('log');
+    let tinify = this.app('tinify');
+    let filemode = this.get('filemode');
+    let dirmode = this.get('dirmode');
+    let temp_path = this.deriveTempPath(blob);
+    let source_path = this.source(relpath);
+    let pathsum = hash.digest(relpath);
+    let lock;
 
-    return new P((resolve, reject) => {
-      queue.defer((done) => {
-        let tinify = this.app('tinify');
-        let filemode = this.get('filemode');
-        let dirmode = this.get('dirmode');
-        let temp_path = this.deriveTempPath(blob);
-        let source_path = this.source(relpath);
-        let log = this.app('log');
-        let pathsum = hash.digest(relpath);
-        let lock;
+    let cleanup = (done) => {
+      lock && lock.delete().then(() => {
+        log.info('[RELS] ' + relpath);
+        lock.destroy();
+      });
 
-        // acquire a lock on the blob path
-        return Semaphore.objects.create({id: pathsum})
+      blob.destroy();
+      done && done();
+    };
 
-        .then((semaphore) => {
-          log.info('[LOCK] ' + relpath);
-          lock = semaphore;
+    queue.defer((done) => {
 
-          // scaffold out the target temp directory
-          return mkdirp(path.dirname(temp_path))
+      // acquire a lock on the blob path
+      return Semaphore.objects.create({id: pathsum, path: relpath})
 
-          // optimize the image with tinify
+      .then((semaphore) => {
+        lock = semaphore;
+        log.info('[LOCK] ' + lock.get('path'));
+
+        // scaffold out the target temp directory
+        return mkdirp(path.dirname(temp_path))
+
+        // optimize the image with tinify
+        .then(() => {
+          return blob.optimize(tinify)
+        })
+
+        // write the optimized image buffer to the temp path
+        .then((blob) => {
+          return write(temp_path, blob.get('buffer'), {mode: filemode, encoding: 'binary'})
+          .then(() => blob);
+        })
+
+        // move the optimized image from the temp path to the original source path
+        .then((blob) => {
+          return mv(temp_path, source_path, {clobber: true, mkdirp: true})
           .then(() => {
-            return blob.optimize(tinify)
-          })
-
-          // write the optimized image buffer to the temp path
-          .then((blob) => {
-            return write(temp_path, blob.get('buffer'), {mode: filemode, encoding: 'binary'})
-            .then(() => blob);
-          })
-
-          // move the optimized image from the temp path to the original source path
-          .then((blob) => {
-            return mv(temp_path, source_path, {clobber: true, mkdirp: true})
-            .then(() => {
-              log.info('[CHANGED] ' + relpath);
-              return blob;
-            });
-          })
-
-          .catch(Conflict, (e) => {
-            return Blob.objects.first({hash: blob.get('hash')}, {fail: true})
-          })
-
-          .catch(AlreadyOptimized, (e) => {
-            log.info('[SKIP] ' + relpath);
-            return e.blob;
-          })
-
-          .catch((e) => {
-            log.info('[FAIL] ' + relpath);
-            log.error(e.message);
-            log.debug(e.stack);
-          })
-        })
-
-        .then((blob) => {
-          return this.recordBlobPath(blob, relpath);
-        })
-
-        .then((blob) => {
-          lock && lock.delete().then(() => {
-            log.info('[RELEASE] ' + relpath);
-          })
-
-          done(); 
-          setImmediate(resolve);
+            log.info('[ OK ] ' + relpath);
+            return blob;
+          });
         })
 
         .catch(Conflict, (e) => {
-          log.warn('[RACE] ' + relpath);
-          done();
+          console.log(e.message);
+          return Blob.objects.first({hash: blob.get('hash')}, {fail: true})
+        })
+
+        .catch(AlreadyOptimized, (e) => {
+          log.info('[SKIP] ' + relpath);
+          return e.blob;
         })
 
         .catch((e) => {
-          log.warn('[FAIL] ' + relpath);
-          lock && lock.delete();
+          log.info('[FAIL] ' + relpath);
           log.error(e.message);
           log.debug(e.stack);
-          reject(e);
-          setImmediate(() => done(e));
-        });
+          throw e;
+        })
+      })
 
-      }); // queue.defer();
-    }) // new P()
+      .then((blob) => {
+        return this.recordBlobPath(blob, relpath);
+      })
+
+      .catch(Conflict, (e) => {
+        log.warn('[RACE] ' + relpath);
+      })
+
+      .catch((e) => {
+        log.warn('[FAIL] ' + relpath);
+        log.error(e.message);
+        log.debug(e.stack);
+      })
+
+      .finally(() => {
+        cleanup(done);
+        return P.resolve();
+      })
+
+    }); // queue.defer();
   }
 
   /**
@@ -231,5 +248,11 @@ module.exports = class Optimizer extends Plugin {
 
     return BlobPath.objects.create({blob_id: blob_id, path: relpath})
     .catch(Conflict, (e) => blob);
+  }
+
+  retryPaths (semaphores) {
+    return P.all(semaphores.map((semaphore) => {
+      return this.optimizePath(semaphore.get('path'));
+    }));
   }
 }

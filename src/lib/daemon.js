@@ -60,7 +60,12 @@ const Daemon = exports.Daemon = class Daemon extends Component {
    * @return void
    */
   up () {
-    return P.all(_.map(this.plugins, (plugin) => plugin.up()));
+    return P.all(_.map(this.plugins, (plugin) => plugin.up()))
+
+    .catch((e) => {
+      console.log(e);
+      return P.reject(e);  
+    })
   }
 
   /**

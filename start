@@ -24,7 +24,7 @@ init_mysql () {
 
     echo "Waiting for MySQL server to start accepting queries..."
     while [ 0 ]; do
-        cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"'"
+        cmd="mysql -u root -p${TINIFYD_DB_PASS} -e 'SELECT \"READY\"' 2> /dev/null"
         result=$(docker exec $DB_CONTAINER bash -c "$cmd" || true)
         sleep 2
 

@@ -358,28 +358,36 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
   }
 
   /**
-   * Remove semaphores older than maxage (milliseconds)
+   * Delete semaphores older than maxage (milliseconds). Return the deleted
+   * models.
    * @async
    * @param {Number}   maxage
    * @param {Date}     now         - for testing
-   * @return void
+   * @return {Array}
    */
   cleanup (maxage, now) {
-    return this.stale(maxage, now, true)
+    return this.stale(maxage, now)
 
-    .then((ids) => {
-      if (!ids.length) {
+    .then((models) => {
+      if (!models.length) {
         return [];
       }
 
       let db = this.db();
       let table = this.table();
-      let bindings = ids.map(() => '?').join(',');
-      let stmt = t('DELETE FROM `%s` WHERE `id` in (%s)', table, bindings);
+      let bindings = [];
+
+      let ids = models.map((model) => {
+        bindings.push('?');
+        return model.get('id');
+      });
+
+      let sql = 'DELETE FROM `%s` WHERE `id` in (%s)';
+      let stmt = t(sql, table, bindings.join(','));
 
       return new P((resolve, reject) => {
         db.execute(stmt, ids, (err, result) => {
-          err ? reject(err) : resolve(ids);
+          err ? reject(err) : resolve(models);
         });
       })
     });
@@ -393,19 +401,18 @@ const SemaphoreManager = class SemaphoreManager extends Manager {
    * @param {Boolean} ids  return ids only
    * @return {Array}
    */
-  stale (maxage, now, ids) {
+  stale (maxage, now) {
     let db = this.db();
     let ModelClass = this.model();
     let table = this.table();
-    let stmt = t('SELECT id FROM `%s` WHERE `created_at` <= ?', table);
+    let stmt = t('SELECT * FROM `%s` WHERE `created_at` <= ?', table);
     let threshold = moment(now || new Date()).subtract(maxage, 'milliseconds');
     let sqltime = sql.format.datetime(threshold);
 
     return new P((resolve, reject) => {
       db.execute(stmt, [sqltime], (err, rows) => {
-        err ? reject(err) : resolve(rows.map((row) => {
-          return ids ? new Buffer(row.id, 'binary') : new ModelClass(row);
-        }));
+        console.log(rows);
+        err ? reject(err) : resolve(rows.map((row) => new ModelClass(row)));
       });
     })
   }
@@ -427,7 +434,17 @@ const Semaphore = class Semaphore extends Model {
   defaults () {
     return {
       id: null,
+      path: null,
     };
+  }
+
+  columns () {
+    return ['id', 'path'];
+  }
+
+  set id (value) {
+    let kosher = value instanceof Buffer;
+    return kosher ? value : new Buffer(value, 'binary');  
   }
 
 }
