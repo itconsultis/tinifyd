@@ -78,8 +78,6 @@ module.exports = class Optimizer extends Plugin {
 
       let iterate = () => this.optimizeAllPaths();
       this.interval = setInterval(iterate, this.get('frequency') || 900000);
-
-      return iterate();
     })
   }
 
