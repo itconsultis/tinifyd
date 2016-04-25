@@ -4,6 +4,8 @@ ${PROJECT}_node:
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
   env_file: ./src/.env
+  environment:
+    TINIFYD_DB_HOST: ${PROJECT}_db
   links:
     - ${PROJECT}_db
   volumes_from:
