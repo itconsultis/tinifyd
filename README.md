@@ -30,7 +30,7 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b 0.9.3 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.10.0 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
@@ -42,6 +42,48 @@ with its path so that images are optimized *only once*.
   ```
   ./start
   ```
+
+### Environment variables
+
+`TINIFYD_API_KEY`
+
+Your Tinify API key
+
+`TINIFYD_SOURCE_PATH`
+
+Absolute filesystem path to the images you want to optimize.
+
+`TINIFYD_TEMP_PATH` (/tmp/tinifyd)
+
+Directory that holds temporary image copies created during an optimization. 
+This directory must be writable by the node process.
+
+`TINIFYD_BACKUP_PATH` 
+
+Image originals inside TINIFYD_SOURCE_PATH are backed up to this directory.
+This directory must be writable by the node process.
+
+`TINIFYD_API_DUMMY`
+
+Whether to use a dummy tinify client (which doesn't optimize images at all)
+
+`TINIFYD_CONCURRENCY`
+
+Maxiumum number of concurrent optimization operations tinifyd is allowed to
+perform at any given time.
+
+`TINIFYD_LOCK_TIMEOUT`
+
+Locks older than this TTL (milliseconds) are deleted by the janitor plugin.
+
+`TINIFYD_OPTIMIZER_FREQUENCY`
+
+This determins how often the optimizer plugin will perform a full scan of
+TINIFYD_SOURCE_PATH and process unoptimized images within.
+
+`TINIFYD_DB_DATA_VOLUME`
+
+MySQL data directory (Docker host volume)
 
 ## How to run tests
 
@@ -62,7 +104,7 @@ npm test
 - Back up the image original
 - Optimize the image via tinify
 - Compute the hash sum of the optimized image
-- Replace the original with the optimized one
+- Replace (clobber) the original with the optimized one
 - Record the optimized hash sum in the blob table
 - Release the lock on image path
 
