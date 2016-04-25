@@ -59,6 +59,7 @@ npm test
 - Acquire a lock on the image path
 - Compute the current hash sum of the image
 - Ensure the hash sum is not in the blob table; escape if it is
+- Back up the image original
 - Optimize the image via tinify
 - Compute the hash sum of the optimized image
 - Replace the original with the optimized one
@@ -89,7 +90,6 @@ of concurrent optimization operations. This cap is to be configurable.
 
 ## Todos
 
-- make image backups before optimizing
 - more tests
 - race condition recovery
 
