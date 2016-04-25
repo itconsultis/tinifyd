@@ -22,6 +22,8 @@ const get = (key, fallback) => {
   return ENV[key];
 };
 
+const DEBUG = Boolean(Number(get('TINIFYD_DEBUG', false)));
+
 ///////////////////////////////////////////////////////////////////////////
 
 // parse .env file and merge into process.env
@@ -29,10 +31,10 @@ dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(APP_ROOT, '.env')});
 
 module.exports = {
 
-  debug: Boolean(Number(get('TINIFYD_DEBUG', false))),
+  debug: DEBUG,
 
   log: {
-    level: get('TINIFYD_LOG_LEVEL', 'info'),
+    level: DEBUG ? 'debug' : get('TINIFYD_LOG_LEVEL', 'info'),
   },
 
   opt: {
@@ -69,6 +71,7 @@ module.exports = {
       frequency: Number(get('TINIFYD_OPTIMIZER_FREQUENCY', 900000)),
       filemode: '0644',
       dirmode: '0755',
+      backups: get('TINIFYD_BACKUP_PATH'),
     }
 
   },
