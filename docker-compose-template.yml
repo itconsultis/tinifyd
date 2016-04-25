@@ -27,12 +27,11 @@ ${PROJECT}_storage:
   image: busybox:latest
   container_name: ${PROJECT}_storage
   volumes:
-    - /opt/tinifyd
     - ./src:/opt/tinifyd
     - ${TINIFYD_SOURCE_PATH}:/var/lib/tinifyd/images
+    - ${TINIFYD_BACKUP_PATH}:/var/lib/tinifyd/originals
     - ${TINIFYD_TEMP_PATH}:/tmp/tinifyd
     - ${TINIFYD_DB_DATA_VOLUME}:/var/lib/mysql
     - ./var/log/pm2:/var/log/pm2
     - ./var/log/mysql:/var/log/mysql
-    #- ./env/db/etc/mysql:/etc/mysql
 

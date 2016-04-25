@@ -71,7 +71,7 @@ module.exports = {
       frequency: Number(get('TINIFYD_OPTIMIZER_FREQUENCY', 900000)),
       filemode: '0644',
       dirmode: '0755',
-      backups: get('TINIFYD_BACKUP_PATH'),
+      backups: '/var/lib/tinifyd/originals',
     }
 
   },
