@@ -594,20 +594,7 @@ const Blob = exports.Blob = class Blob extends Model {
     let buffer = this.get('buffer');
     let attrs = this.attrs;
 
-    return this.optimized()
-
-    .then((optimized) => {
-      if (optimized) {
-        let e = new AlreadyOptimized();
-        e.blob = optimized;
-
-        throw e;
-      }
-    })
-
-    .then(() => {
-      return tinify.fromBuffer(buffer).toBuffer();
-    })
+    return tinify.fromBuffer(buffer).toBuffer()
 
     .then((optimized_buffer) => {
       this.set('buffer', buffer);
@@ -639,7 +626,7 @@ const Blob = exports.Blob = class Blob extends Model {
     let sum = this.get('hash');
 
     return this.manager().first({hash: sum}).then((model) => {
-      return model; 
+      return Boolean(model); 
     });
   }
 

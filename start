@@ -14,9 +14,9 @@ fi
 
 source ./src/.env
 
-NODE_CONTAINER=${DOCKER_CONTAINER_PREFIX}_node
-DB_CONTAINER=${DOCKER_CONTAINER_PREFIX}_db
-STORAGE_CONTAINER=${DOCKER_CONTAINER_PREFIX}_storage
+NODE_CONTAINER=${PROJECT}_node
+DB_CONTAINER=${PROJECT}_db
+STORAGE_CONTAINER=${PROJECT}_storage
 
 # wait for mysql server to start accepting queries
 init_mysql () {
@@ -45,10 +45,6 @@ init_mysql () {
 npm_tasks () {
     echo "Installing npm dependencies..."
     docker exec $NODE_CONTAINER bash -c "npm install"
-
-    if [ "$TINIFYD_NPM_REBUILD" -ne "0" ]; then
-        docker exec $NODE_CONTAINER bash -c "npm rebuild"
-    fi
 }
 
 

@@ -103,7 +103,6 @@ module.exports = class Optimizer extends Plugin {
    * @return void
    */
   optimizeAllPaths () {
-    console.log('optimizeAllPaths()');
     let queue = this.get('queue');
     let relativize = (abspath) => this.normalizeSourcePath(abspath);
     let optimize = (relpath) => this.optimizePath(relpath);
@@ -125,8 +124,20 @@ module.exports = class Optimizer extends Plugin {
 
     return Blob.objects.fromFile(this.source(relpath))
 
-    .then((blob) => {
-      this.optimizeBlob(blob, relpath)
+    .then(blob => {
+      return blob.optimized()
+      .then(optimized => {
+        if (optimized) {
+          log.info('[SKIP] ' + relpath);
+          return;
+        }
+
+        log.info('[BACKUP] ' + relpath);
+
+        return this.backupOriginal(blob, relpath)
+
+        .then(() => this.optimizeBlob(blob, relpath))
+      })
     })
 
     .catch(InvalidType, (e) => {
@@ -140,14 +151,15 @@ module.exports = class Optimizer extends Plugin {
     let tinify = this.app('tinify');
     let filemode = this.get('filemode');
     let dirmode = this.get('dirmode');
-    let temp_path = this.deriveTempPath(blob);
+    let temp_path = this.temp(relpath);
     let source_path = this.source(relpath);
+
     let pathsum = hash.digest(relpath);
     let lock;
 
     let cleanup = (done) => {
       lock && lock.delete().then(() => {
-        log.info('[RELS] ' + relpath);
+        log.info('[RELEASE] ' + relpath);
         lock.destroy();
       });
 
@@ -180,9 +192,11 @@ module.exports = class Optimizer extends Plugin {
 
         // move the optimized image from the temp path to the original source path
         .then((blob) => {
+
           return mv(temp_path, source_path, {clobber: true, mkdirp: true})
+
           .then(() => {
-            log.info('[CHGD] ' + relpath);
+            log.info('[CHANGED] ' + relpath);
             return blob;
           });
         })
@@ -192,17 +206,12 @@ module.exports = class Optimizer extends Plugin {
           return Blob.objects.first({hash: blob.get('hash')}, {fail: true})
         })
 
-        .catch(AlreadyOptimized, (e) => {
-          log.info('[SKIP] ' + relpath);
-          return e.blob;
-        })
-
-        .catch((e) => {
-          log.info('[FAIL] ' + relpath);
-          log.error(e.message);
-          log.debug(e.stack);
-          throw e;
-        })
+        //.catch((e) => {
+        //  log.info('[FAILED] ' + relpath);
+        //  log.error(e.message);
+        //  log.debug(e.stack);
+        //  throw e;
+        //})
       })
 
       .then((blob) => {
@@ -214,7 +223,7 @@ module.exports = class Optimizer extends Plugin {
       })
 
       .catch((e) => {
-        log.warn('[FAIL] ' + relpath);
+        log.warn('[FAILED] ' + relpath);
         log.error(e.message);
         log.debug(e.stack);
       })
@@ -225,21 +234,6 @@ module.exports = class Optimizer extends Plugin {
       })
 
     }); // queue.defer();
-  }
-
-  /**
-   * Return a fully qualified temp path for a blob based on the blob's hash
-   * @param {String} tempdir
-   * @param {models.Blob} blob
-   * @return {String}
-   */
-  deriveTempPath (blob) {
-    let temp_dir = this.temp('blobs');
-    let hexsum = blob.get('hash').toString('hex');
-    let subdir = hexsum.slice(0, 2);
-    let filepath = path.join(temp_dir, subdir, hexsum);
-
-    return filepath;
   }
 
   /**
@@ -265,8 +259,21 @@ module.exports = class Optimizer extends Plugin {
     }));
   }
 
-  normalizeSourcePath(filepath) {
+  normalizeSourcePath (filepath) {
     let output = filepath.split(this.source()).pop();
     return output.slice(1);
   }
+
+  backupOriginal (blob, relpath) {
+    let backup_path = path.join(this.get('backups'), relpath);
+    let filemode = this.get('filemode');
+
+    return mkdirp(path.dirname(backup_path))
+
+    .then(() => write(backup_path, blob.get('buffer'), {
+      mode: filemode,
+      encoding: 'binary',
+    }))
+  }
+
 }
