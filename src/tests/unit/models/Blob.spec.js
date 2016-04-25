@@ -65,7 +65,6 @@ describe('models.Blob', () => {
       return blob.optimize(tinify)
 
       .then((result) => {
-        expect(blob.optimized.calledOnce).to.be.ok;
         expect(result).to.eql(blob);
         expect(tinify.fromBuffer.calledOnce).to.be.ok;
       })
