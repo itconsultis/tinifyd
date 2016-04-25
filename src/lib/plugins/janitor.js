@@ -51,10 +51,9 @@ module.exports = class Janitor extends Plugin {
     return Semaphore.objects.cleanup(config.opt.lockttl)
 
     .then((semaphores) => {
-
       let n = semaphores.length;
 
-      log.debug('deleted %s stale locks', n);
+      log.info('deleted %s stale locks', n);
 
       semaphores.forEach((semaphore) => {
         log.info('[RELS] ' + semaphore.get('path'));
