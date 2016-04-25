@@ -17,6 +17,7 @@ with its path so that images are optimized *only once*.
 
 - Low CPU load; images are compressed on TinyPNG's servers
 - Images are optimized only once
+- Unoptimized image originals are backed up
 
 ## Requirements
 
@@ -69,8 +70,8 @@ Whether to use a dummy tinify client (which doesn't optimize images at all)
 
 `TINIFYD_CONCURRENCY`
 
-Maxiumum number of concurrent optimization operations tinifyd is allowed to
-perform at any given time.
+Maximum number of concurrent optimization operations tinifyd is allowed to
+perform at any given moment.
 
 `TINIFYD_LOCK_TIMEOUT`
 
