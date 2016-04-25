@@ -90,8 +90,8 @@ of concurrent optimization operations. This cap is to be configurable.
 
 ## Todos
 
-- more tests
-- race condition recovery
+- put both node and mysql processes inside one Docker container
+- tests
 
 ## License
 
