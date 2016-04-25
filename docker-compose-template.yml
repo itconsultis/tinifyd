@@ -1,17 +1,17 @@
-node:
+${PROJECT}_node:
   image: node:5.7-wheezy
-  container_name: ${DOCKER_PROJECT}_node
+  container_name: ${PROJECT}_node
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
   env_file: ./src/.env
   links:
-    - db
+    - ${PROJECT}_db
   volumes_from:
-    - storage
+    - ${PROJECT}_storage
 
-db:
+${PROJECT}_db:
   image: percona:5.6
-  container_name: ${DOCKER_PROJECT}_db
+  container_name: ${PROJECT}_db
   expose:
     - "3306"
   environment:
@@ -19,15 +19,14 @@ db:
     MYSQL_DATABASE: ${TINIFYD_DB_NAME}
   env_file: ./src/.env
   volumes_from:
-    - storage
+    - ${PROJECT}_storage
 
-storage:
+${PROJECT}_storage:
   image: busybox:latest
-  container_name: ${DOCKER_PROJECT}_storage
+  container_name: ${PROJECT}_storage
   volumes:
     - /opt/tinifyd
     - ./src:/opt/tinifyd
-
     - ${TINIFYD_SOURCE_PATH}:/var/lib/tinifyd/images
     - ${TINIFYD_TEMP_PATH}:/tmp/tinifyd
     - ${TINIFYD_DB_DATA_VOLUME}:/var/lib/mysql
