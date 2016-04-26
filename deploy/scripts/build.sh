@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -xeuo pipefail
 
+if [ -n "$(git status --porcelain)" ]; then
+    echo "There are unstaged or untracked changes in the Git repository."
+    echo "Builds are only possible from a clean repo."
+    exit 1
+fi
+
 PROJECT=tinifyd
 SCRIPT_PATH=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)/$(basename "${BASH_SOURCE[0]}")
 SCRIPT_DIR=$(dirname $SCRIPT_PATH)
@@ -30,5 +36,7 @@ git remote add $GIT_REMOTE $GIT_REPOSITORY
 git fetch --all
 git reset --hard FETCH_HEAD
 
-docker build -t "${DOCKER_IMAGE}" .
+docker build -t $DOCKER_IMAGE .
+docker push $DOCKER_IMAGE
 
+exit 0
