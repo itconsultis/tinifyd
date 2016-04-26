@@ -13,3 +13,4 @@ RUN npm --unsafe-perm rebuild
 
 USER node
 
+ENTRYPOINT bin/pm2 start
