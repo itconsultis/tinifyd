@@ -1,8 +1,7 @@
 node_modules
 build/*
 docker-compose.yml
-src/.env
-.env
+/.env
 
 /tmp
 /logs/mysql/*
