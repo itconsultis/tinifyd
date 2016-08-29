@@ -1,5 +1,5 @@
 ${PROJECT}_node:
-  image: node:5.7-wheezy
+  image: node:6.4.0-wheezy
   container_name: ${PROJECT}_node
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
@@ -12,7 +12,7 @@ ${PROJECT}_node:
     - ${PROJECT}_storage
 
 ${PROJECT}_db:
-  image: percona:5.6
+  image: percona:5.7
   container_name: ${PROJECT}_db
   expose:
     - "3306"

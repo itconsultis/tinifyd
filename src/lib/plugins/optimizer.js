@@ -124,20 +124,18 @@ module.exports = class Optimizer extends Plugin {
 
     return Blob.objects.fromFile(this.source(relpath))
 
-    .then(blob => {
-      return blob.optimized()
-      .then(optimized => {
-        if (optimized) {
-          log.info('[SKIP] ' + relpath);
-          return;
-        }
+    .then(blob => blob.optimized())
 
+
+    .then(optimized => {
+      if (!optimized) {
         log.info('[BACKUP] ' + relpath);
-
         return this.backupOriginal(blob, relpath)
-
-        .then(() => this.optimizeBlob(blob, relpath))
-      })
+        .then(() => this.optimizeBlob(blob, relpath));
+      }
+      else {
+        log.info('[SKIP] ' + relpath);
+      }
     })
 
     .catch(InvalidType, (e) => {

@@ -14,6 +14,7 @@ fi
 
 source ./src/.env
 
+TIMEZONE=$(cat /etc/timezone | xargs)
 NODE_CONTAINER=${PROJECT}_node
 DB_CONTAINER=${PROJECT}_db
 STORAGE_CONTAINER=${PROJECT}_storage
@@ -83,5 +84,5 @@ npm_tasks
 init_mysql
 run_migrations
 start_process
-tail -f -n 0 var/log/pm2/stdout*.log
+tail -f -n 0 var/log/pm2/stdout.log
 

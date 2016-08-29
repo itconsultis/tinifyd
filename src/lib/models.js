@@ -103,7 +103,8 @@ const Manager = class Manager extends Component {
     let table = ModelClass.prototype.table();
     let bindings = _.map(params, (value, col) => t('`%s` = :%s', col, col));
     let conditionals = bindings.join(' AND ');
-    let stmt = t('SELECT COUNT(1) as `aggregate` FROM `%s` WHERE %s', table, conditionals);
+    let sql = 'SELECT COUNT(1) as `aggregate` FROM `%s` WHERE %s';
+    let stmt = t(sql, table, conditionals);
 
     if (options.limit) {
       stmt = t('%s %s', stmt, 'LIMIT :limit');
@@ -596,8 +597,8 @@ const Blob = exports.Blob = class Blob extends Model {
 
     return tinify.fromBuffer(buffer).toBuffer()
 
-    .then((optimized_buffer) => {
-      this.set('buffer', buffer);
+    .then((optimized) => {
+      this.set('buffer', optimized);
 
       return this.save().then(() => this)
 
