@@ -1,20 +1,20 @@
 const _ = require('lodash');
 const path = require('path');
-const dotenv = require('dotenv');
 
 ///////////////////////////////////////////////////////////////////////////
 
 const APP_ROOT = path.dirname(__filename);
 const ENV = process.env;
+console.log(ENV);
 
 /**
  * Return the value of an environment variable
  * @param {String} key     the name of the environment variable
  * @return mixed
  */
-const get = (key, fallback) => {
+const get = (key, fallback=undefined) => {
   if (!ENV.hasOwnProperty(key)) {
-    if (arguments.length < 2) {
+    if (fallback === undefined) {
       throw new Error('environment variable not found: ' + key);
     }
     return fallback;
@@ -25,9 +25,6 @@ const get = (key, fallback) => {
 const DEBUG = Boolean(Number(get('TINIFYD_DEBUG', false)));
 
 ///////////////////////////////////////////////////////////////////////////
-
-// parse .env file and merge into process.env
-dotenv.config({path: ENV.TINIFYD_DOTENV_PATH ||  path.join(APP_ROOT, '.env')});
 
 module.exports = {
 
@@ -72,7 +69,7 @@ module.exports = {
       filemode: '0644',
       dirmode: '0755',
       backups: '/var/lib/tinifyd/originals',
-    }
+    },
 
   },
 
