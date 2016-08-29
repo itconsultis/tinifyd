@@ -53,13 +53,16 @@ module.exports = class Janitor extends Plugin {
     .then((semaphores) => {
       let n = semaphores.length;
 
-      log.info('deleted %s stale locks', n);
+      if (n > 0) {
 
-      semaphores.forEach((semaphore) => {
-        log.info('[RELS] ' + semaphore.get('path'));
-      });
+        log.info('deleted %s stale locks', n);
 
-      this.app('eventbus').emit('locks:cleared', semaphores);
+        semaphores.forEach((semaphore) => {
+          log.info('[RELS] ' + semaphore.get('path'));
+        });
+
+        this.app('eventbus').emit('locks:cleared', semaphores);
+      }
     });
   }
 

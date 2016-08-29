@@ -1,5 +1,5 @@
 ${PROJECT}_node:
-  image: node:5.7-wheezy
+  image: node:6.4.0-wheezy
   container_name: ${PROJECT}_node
   command: tail -f /dev/null
   working_dir: /opt/tinifyd
@@ -12,7 +12,7 @@ ${PROJECT}_node:
     - ${PROJECT}_storage
 
 ${PROJECT}_db:
-  image: percona:5.6
+  image: percona:5.7
   container_name: ${PROJECT}_db
   expose:
     - "3306"
@@ -27,12 +27,11 @@ ${PROJECT}_storage:
   image: busybox:latest
   container_name: ${PROJECT}_storage
   volumes:
-    - /opt/tinifyd
     - ./src:/opt/tinifyd
     - ${TINIFYD_SOURCE_PATH}:/var/lib/tinifyd/images
+    - ${TINIFYD_BACKUP_PATH}:/var/lib/tinifyd/originals
     - ${TINIFYD_TEMP_PATH}:/tmp/tinifyd
     - ${TINIFYD_DB_DATA_VOLUME}:/var/lib/mysql
     - ./var/log/pm2:/var/log/pm2
     - ./var/log/mysql:/var/log/mysql
-    #- ./env/db/etc/mysql:/etc/mysql
 

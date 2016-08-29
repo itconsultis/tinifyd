@@ -13,10 +13,17 @@ Repeatedly compressing the same image will result in perceptible image degradati
 tinifyd remembers the SHA-1 sum of every image that is has ever optimized, along
 with its path so that images are optimized *only once*.
 
+tinifyd is useful if you are running a CMS whose users can't be bothered to
+optimize images before they are uploaded. It does *not* replace a proper build
+process that optimizes images, and never will. It might save you some bandwidth
+(i.e., money) however.
+
 ## Features
 
 - Low CPU load; images are compressed on TinyPNG's servers
 - Images are optimized only once
+- Smart image type detection via [mmagic](https://github.com/mscdex/mmmagic)
+- Unoptimized image originals are backed up
 
 ## Requirements
 
@@ -30,7 +37,7 @@ with its path so that images are optimized *only once*.
 - Clone this repository
 
   ```
-  git clone -b 0.10.1 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.10.2 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
@@ -69,8 +76,8 @@ Whether to use a dummy tinify client (which doesn't optimize images at all)
 
 `TINIFYD_CONCURRENCY`
 
-Maxiumum number of concurrent optimization operations tinifyd is allowed to
-perform at any given time.
+Maximum number of concurrent optimization operations tinifyd is allowed to
+perform at any given moment.
 
 `TINIFYD_LOCK_TIMEOUT`
 
@@ -100,11 +107,11 @@ npm test
 - Ensure the image is a JPG or PNG
 - Acquire a lock on the image path
 - Compute the current hash sum of the image
-- Ensure the hash sum is not in the blob table; escape if it is
+- Ensure the hash sum is not in the blob table (meaning it is optimized); escape if it is
 - Back up the image original
 - Optimize the image via tinify
 - Compute the hash sum of the optimized image
-- Replace (clobber) the original with the optimized one
+- Replace (clobber) the image original with the optimized one
 - Record the optimized hash sum in the blob table
 - Release the lock on image path
 
