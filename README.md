@@ -37,7 +37,7 @@ process that optimizes images, and never will. It might save you some bandwidth
 - Clone this repository
 
   ```
-  git clone -b 0.10.2 git@github.com:itconsultis/tinifyd.git
+  git clone -b 0.12.0 git@github.com:itconsultis/tinifyd.git
   ```
 
 - Copy `src/.env.example` to `src/.env`.
