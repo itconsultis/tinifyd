@@ -21,8 +21,6 @@ module.exports = (config) => {
 
   let app = new Container();
 
-  console.log(config);
-
   return app.set('config', config)
 
   /////////////////////////////////////////////////////////////////////////

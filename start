@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-set -aeu -o pipefail
+set -aeuo pipefail
 
-if [ ! -f ./src/.env ]; then
-    cp ./src/.env.example ./src/.env
-    echo "Created boilerplate .env file in src directory.\n"
+DOTENV=.env
+
+if [ ! -f "$DOTENV" ]; then
+    cp "${DOTENV}.default" "$DOTENV"
+    echo "Created boilerplate .env file.\n"
     echo "********************************************************"
     echo "*** IMPORTANT: You need to modify the .env file NOW. ***"
     echo "*** Make your modifications, then re-run this script.   "
@@ -12,9 +14,12 @@ if [ ! -f ./src/.env ]; then
     exit 0    
 fi
 
-source ./src/.env
+source "$DOTENV"
 
-TIMEZONE=$(cat /etc/timezone | xargs)
+if [ ! -v "TIMEZONE" ]; then
+    TIMEZONE=$(cat /etc/timezone | xargs)
+fi
+
 NODE_CONTAINER=${PROJECT}_node
 DB_CONTAINER=${PROJECT}_db
 STORAGE_CONTAINER=${PROJECT}_storage
@@ -84,5 +89,5 @@ npm_tasks
 init_mysql
 run_migrations
 start_process
-tail -f -n 0 var/log/pm2/stdout.log
+tail -f -n 0 var/log/pm2/stdout-0.log
 
