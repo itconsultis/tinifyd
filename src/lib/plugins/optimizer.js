@@ -38,22 +38,22 @@ module.exports = class Optimizer extends Plugin {
         {
           subject: watcher,
           event: 'add',
-          listener: function(relpath) {
-            return self.optimizePath(relpath);
+          listener: (relpath) => {
+            return this.optimizePath(relpath);
           }
         },
         {
           subject: watcher,
           event: 'change',
-          listener: function(relpath) {
-            return self.optimizePath(relpath);
+          listener: (relpath) => {
+            return this.optimizePath(relpath);
           },
         },
         {
           subject: eventbus,
           event: 'locks:cleared',
-          listener: function(semaphores) {
-            return self.retryPaths(semaphores);
+          listener: (semaphores) => {
+            return this.retryPaths(semaphores);
           },
         },
       ];
@@ -124,18 +124,20 @@ module.exports = class Optimizer extends Plugin {
 
     return Blob.objects.fromFile(this.source(relpath))
 
-    .then(blob => blob.optimized())
+    .then((blob) => {
 
+      return blob.optimized()
 
-    .then(optimized => {
-      if (!optimized) {
-        log.info('[BACKUP] ' + relpath);
-        return this.backupOriginal(blob, relpath)
-        .then(() => this.optimizeBlob(blob, relpath));
-      }
-      else {
-        log.info('[SKIP] ' + relpath);
-      }
+      .then((optimized) => {
+        if (!optimized) {
+          log.info('[BACKUP] ' + relpath);
+          return this.backupOriginal(blob, relpath)
+          .then(() => this.optimizeBlob(blob, relpath));
+        }
+        else {
+          log.info('[SKIP] ' + relpath);
+        }
+      })
     })
 
     .catch(InvalidType, (e) => {
