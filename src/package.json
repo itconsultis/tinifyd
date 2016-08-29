@@ -18,7 +18,6 @@
     "d3-queue": "^2.0.3",
     "db-migrate": "^0.10.0-beta.11",
     "db-migrate-mysql": "^1.1.6",
-    "dotenv": "^2.0.0",
     "glob": "^7.0.3",
     "glob-all": "^3.0.1",
     "is": "^3.1.0",
